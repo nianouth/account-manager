@@ -1,0 +1,294 @@
+/**
+ * 全房通账号管理器V1.0.0 - 悬浮面板样式
+ * 符合 Chrome Extension Manifest V3 规范
+ * 响应式设计，现代化UI
+ * 与popup.html保持统一的设计语言
+ */
+
+:root {
+    /* 颜色系统（与popup.html保持一致，基于全房通登录页面配色） */
+    --primary-gradient: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%);
+    --primary-color: #518EFF;
+    --primary-hover: #3A80F0;
+    --success-color: #00CC66;
+    --success-hover: #00B359;
+    --danger-color: #ef4444;
+    --info-color: #518EFF;
+    --info-hover: #3A80F0;
+    
+    --bg-primary: #ffffff;
+    --bg-secondary: #E6EFFB;
+    --bg-tertiary: #A3C6FF;
+    --border-color: #E0E0E0;
+    --border-hover: #CCCCCC;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --text-tertiary: #CCCCCC;
+    
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 悬浮面板基础样式 */
+#account-manager-panel {
+    position: fixed !important;
+    /* top 和 right 由 JavaScript 动态控制，不在此处设置 !important */
+    width: 320px !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 20px) !important;
+    background: #ffffff !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-xl) !important;
+    border: 1px solid var(--border-color) !important;
+    z-index: 2147483647 !important; /* 最大z-index值 */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    transition: transform var(--transition-base), box-shadow var(--transition-base) !important;
+    animation: fadeIn var(--transition-slow) ease-out !important;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#account-manager-panel:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+#account-manager-panel * {
+    box-sizing: border-box !important;
+}
+
+/* 面板头部 */
+#account-manager-panel .panel-header {
+    padding: 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%) !important;
+    color: white !important;
+    flex-shrink: 0 !important;
+}
+
+#account-manager-panel h3 {
+    margin: 0 0 10px 0 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: white !important;
+}
+
+#account-manager-panel #env-select {
+    width: 100% !important;
+    padding: 8px 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s !important;
+}
+
+#account-manager-panel #env-select:hover {
+    background-color: white !important;
+}
+
+#account-manager-panel #env-select:focus {
+    outline: none !important;
+    border-color: white !important;
+    background-color: white !important;
+}
+
+/* 账号列表容器 */
+#account-manager-panel #account-list {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 10px !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+}
+
+/* 自定义滚动条 */
+#account-manager-panel #account-list::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+#account-manager-panel #account-list::-webkit-scrollbar-track {
+    background: #E6EFFB !important;
+    border-radius: 3px !important;
+}
+
+#account-manager-panel #account-list::-webkit-scrollbar-thumb {
+    background: #A3C6FF !important;
+    border-radius: 3px !important;
+}
+
+#account-manager-panel #account-list::-webkit-scrollbar-thumb:hover {
+    background: #518EFF !important;
+}
+
+/* 账号项样式 */
+#account-manager-panel .account-item {
+    padding: 8px 10px !important;
+    margin-bottom: 5px !important;
+    background-color: #ffffff !important;
+    border-radius: 8px !important;
+    border: 1px solid #E0E0E0 !important;
+    transition: all 0.2s !important;
+    cursor: default !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+#account-manager-panel .account-item:hover {
+    background-color: #E6EFFB !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(81, 142, 255, 0.15) !important;
+}
+
+/* 账号信息区域 */
+#account-manager-panel .account-item > div:first-child {
+    flex: 1 !important;
+    min-width: 0 !important;
+    margin-bottom: 0 !important;
+    font-size: 13px !important;
+    color: #333333 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* 登录按钮 */
+#account-manager-panel .login-btn {
+    padding: 4px 12px !important;
+    background-color: #518EFF !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+}
+
+#account-manager-panel .login-btn:hover {
+    background-color: #3A80F0 !important;
+    transform: scale(1.02) !important;
+}
+
+#account-manager-panel .login-btn:active {
+    transform: scale(0.98) !important;
+}
+
+/* 添加账号按钮 */
+#account-manager-panel #add-account-btn {
+    width: 100% !important;
+    padding: 10px !important;
+    background: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s !important;
+    margin-top: 10px !important;
+}
+
+#account-manager-panel #add-account-btn:hover {
+    transform: scale(1.02) !important;
+    box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4) !important;
+}
+
+#account-manager-panel #add-account-btn:active {
+    transform: scale(0.98) !important;
+}
+
+/* 拖拽样式 */
+#account-manager-panel.dragging {
+    cursor: move !important;
+    opacity: 0.9 !important;
+    transform: scale(1.02) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25) !important;
+}
+
+#account-manager-panel .panel-header {
+    cursor: move !important;
+    user-select: none !important;
+}
+
+/* 空状态样式 */
+#account-manager-panel .empty-state {
+    text-align: center !important;
+    padding: 40px 20px !important;
+    color: #666666 !important;
+    font-size: 14px !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    #account-manager-panel {
+        width: calc(100vw - 20px) !important;
+        max-width: 360px !important;
+    }
+}
+
+/* 防止与页面样式冲突 */
+#account-manager-panel input,
+#account-manager-panel select,
+#account-manager-panel button {
+    font-family: inherit !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#account-manager-panel {
+    animation: fadeIn 0.3s ease-out !important;
+}
+
+/* 确保面板在所有情况下可见 */
+#account-manager-panel {
+    pointer-events: auto !important;
+    visibility: visible !important;
+    display: flex !important;
+}

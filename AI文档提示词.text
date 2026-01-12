@@ -1,0 +1,47 @@
+AI 生成 全房通账号管理器V1.0.0导入json文件
+
+环境列表如下【示例】：环境id 和 账号id 请按照下方列表自增，可以参考给出的json示例
+
+环境列表：
+1、test1
+登录地址：http://www.staging1.quanfangtongvip.com/
+
+2、test2
+登录地址：http://www.staging2.quanfangtongvip.com/
+
+账号列表：
+
+Test1
+
+nianouth（用户名）  17640337731（账号）  123456xk（密码）    test1环境【admin公司】（备注） 
+
+
+示例json【缺省值默认即可】：
+
+{
+  "version": "1.1.0",
+  "exportTime": "2024-01-01T00:00:00.000Z",
+  "environments": [
+    {
+      "id": "env_001",
+      "name": "开发环境",
+      "loginUrl": "https://dev.example.com/login",
+      "loginButtonId": "ch_login_btn",
+      "loginButtonClass": "formBtn",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    }
+  ],
+  "accounts": [
+    {
+      "id": "acc_001",
+      "envId": "env_001",
+      "username": "开发账号1",
+      "account": "dev_user1@example.com",
+      "password": "encrypted_password",
+      "note": "开发环境测试账号",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    }
+  ]
+}

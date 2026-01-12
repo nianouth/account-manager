@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "exportTime": "2024-01-01T00:00:00.000Z",
+  "environments": [
+    {
+      "id": "env_001",
+      "name": "开发环境",
+      "loginUrl": "https://dev.example.com/login",
+      "loginButtonId": "ch_login_btn",
+      "loginButtonClass": "formBtn",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    },
+    {
+      "id": "env_002",
+      "name": "测试环境",
+      "loginUrl": "https://test.example.com/login",
+      "loginButtonId": "ch_login_btn",
+      "loginButtonClass": "formBtn",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    },
+    {
+      "id": "env_003",
+      "name": "生产环境",
+      "loginUrl": "https://example.com/login",
+      "loginButtonId": "ch_login_btn",
+      "loginButtonClass": "formBtn",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    }
+  ],
+  "accounts": [
+    {
+      "id": "acc_001",
+      "envId": "env_001",
+      "username": "开发账号1",
+      "account": "dev_user1@example.com",
+      "password": "your_encrypted_or_plain_password_here",
+      "note": "开发环境测试账号",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    },
+    {
+      "id": "acc_002",
+      "envId": "env_001",
+      "username": "开发账号2",
+      "account": "dev_user2@example.com",
+      "password": "your_encrypted_or_plain_password_here",
+      "note": "",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    },
+    {
+      "id": "acc_003",
+      "envId": "env_002",
+      "username": "测试账号1",
+      "account": "test_user1@example.com",
+      "password": "your_encrypted_or_plain_password_here",
+      "note": "测试环境账号",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    },
+    {
+      "id": "acc_004",
+      "envId": "env_003",
+      "username": "生产账号1",
+      "account": "prod_user1@example.com",
+      "password": "your_encrypted_or_plain_password_here",
+      "note": "生产环境账号，请谨慎使用",
+      "createdAt": 1704067200000,
+      "updatedAt": 1704067200000
+    }
+  ]
+}
