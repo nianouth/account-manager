@@ -1,5 +1,5 @@
 /**
- * 全房通账号管理器V1.0.0 - 内容脚本
+ * 账号管理器 - 内容脚本
  * 符合 Chrome Extension Manifest V3 规范
  * 修复XSS风险，改进DOM操作，添加拖拽功能
  */
@@ -358,7 +358,7 @@ class FloatingPanel {
         fontSize: '16px',
         color: '#333333'
       }
-    }, ['全房通账号管理器V1.0.0']);
+    }, ['账号管理器']);
     
     const envSelect = createElement('select', {
       id: 'env-select',
@@ -1230,7 +1230,7 @@ class FloatingPanel {
     };
     
     // 添加提示文字
-    circleIcon.title = '点击展开全房通账号管理器V1.0.0';
+    circleIcon.title = '点击展开账号管理器';
   }
   
   expandFromCircle() {

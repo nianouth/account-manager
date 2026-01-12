@@ -1,5 +1,5 @@
 /**
- * 全房通账号管理器V1.0.0 - 后台服务脚本
+ * 账号管理器 - 后台服务脚本
  * 符合 Chrome Extension Manifest V3 规范
  */
 
@@ -90,7 +90,7 @@ const matchEnvironment = async (urlString) => {
 
 // 扩展安装/更新监听
 chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('全房通账号管理器V1.0.0扩展已安装/更新:', details.reason);
+  console.log('账号管理器扩展已安装/更新:', details.reason);
   
   if (details.reason === 'install') {
     await initializeDefaultData();
@@ -180,7 +180,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // 错误处理
 chrome.runtime.onStartup.addListener(() => {
-  console.log('全房通账号管理器V1.0.0扩展已启动');
+  console.log('账号管理器扩展已启动');
 });
 
 // Service Worker 保活（Manifest V3 要求）

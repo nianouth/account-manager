@@ -1,12 +1,12 @@
 /**
- * 全房通账号管理器V1.0.0 - 悬浮面板样式
+ * 账号管理器 - 悬浮面板样式
  * 符合 Chrome Extension Manifest V3 规范
  * 响应式设计，现代化UI
  * 与popup.html保持统一的设计语言
  */
 
 :root {
-    /* 颜色系统（与popup.html保持一致，基于全房通登录页面配色） */
+    /* 颜色系统（与popup.html保持一致） */
     --primary-gradient: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%);
     --primary-color: #518EFF;
     --primary-hover: #3A80F0;

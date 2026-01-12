@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "全房通账号管理器V1.0.0",
+  "name": "账号管理器",
   "version": "1.1.0",
-  "description": "悬浮式全房通账号管理器V1.0.0，支持多环境多账号管理，安全可靠",
+  "description": "悬浮式账号管理器，支持多环境多账号管理，安全可靠",
   "author": "Account Manager",
   "permissions": [
     "storage",
@@ -19,7 +19,7 @@
       "48": "icons/icon.png",
       "128": "icons/icon.png"
     },
-    "default_title": "全房通账号管理器V1.0.0"
+    "default_title": "账号管理器"
   },
   "options_page": "popup.html",
   "background": {

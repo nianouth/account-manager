@@ -1,5 +1,5 @@
 /**
- * 全房通账号管理器V1.0.0 - 弹出窗口脚本
+ * 账号管理器 - 弹出窗口脚本
  * 符合 Chrome Extension Manifest V3 规范
  * 添加输入验证、改进UI交互、错误处理
  */
@@ -126,7 +126,7 @@ class ModalManager {
   }
 }
 
-// 全房通账号管理器V1.0.0类
+// 账号管理器类
 class AccountManager {
   constructor() {
     this.currentEnvId = null;
