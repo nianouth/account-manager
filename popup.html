@@ -6,28 +6,27 @@
     <title>账号管理器</title>
     <style>
         :root {
-            /* 现代化颜色系统 */
-            --primary-gradient: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%);
-            --primary-color: #518EFF;
-            --primary-hover: #3A80F0;
-            --secondary-color: #A3C6FF;
-            --success-color: #00CC66;
-            --success-hover: #00B359;
-            --danger-color: #ef4444;
-            --danger-hover: #dc2626;
-            --warning-color: #f59e0b;
-            --info-color: #518EFF;
-            --info-hover: #3A80F0;
+            /* 线条风格颜色系统 */
+            --primary-color: #999999;
+            --primary-hover: #666666;
+            --secondary-color: #999999;
+            --success-color: #999999;
+            --success-hover: #666666;
+            --danger-color: #999999;
+            --danger-hover: #666666;
+            --warning-color: #999999;
+            --info-color: #999999;
+            --info-hover: #666666;
             
-            /* 中性色 */
+            /* 中性色 - 线条风格 */
             --bg-primary: #ffffff;
-            --bg-secondary: #E6EFFB;
-            --bg-tertiary: #A3C6FF;
-            --border-color: #E0E0E0;
-            --border-hover: #CCCCCC;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f9f9f9;
+            --border-color: #cccccc;
+            --border-hover: #999999;
             --text-primary: #333333;
             --text-secondary: #666666;
-            --text-tertiary: #CCCCCC;
+            --text-tertiary: #999999;
             
             /* 间距系统 */
             --spacing-xs: 4px;
@@ -43,17 +42,17 @@
             --radius-lg: 12px;
             --radius-xl: 16px;
             
-            /* 阴影系统 */
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            /* 线条描边系统 - 替代阴影 */
+            --border-width: 1px;
+            --border-width-thick: 2px;
             
             /* 过渡动画 */
             --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
+        /* 手绘风格 - 使用线条描边替代填充和阴影 */
         
         * {
             box-sizing: border-box;
@@ -65,43 +64,38 @@
             max-height: 600px;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            background: #E6EFFB;
+            font-family: 'Comic Sans MS', 'Marker Felt', 'Chalkboard', 'Arial', sans-serif;
+            background: #ffffff;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
             font-size: 14px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             color: var(--text-primary);
+            border: var(--border-width) solid var(--border-color);
         }
         
         .header {
-            background: var(--primary-gradient);
-            color: white;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             padding: var(--spacing-lg);
-            box-shadow: var(--shadow-md);
+            border-bottom: var(--border-width) dashed var(--border-color);
             flex-shrink: 0;
             position: relative;
             overflow: hidden;
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-            pointer-events: none;
         }
         
         .header h1 {
             margin: 0 0 var(--spacing-md) 0;
             font-size: 20px;
             font-weight: 700;
-            letter-spacing: -0.02em;
+            letter-spacing: 0.02em;
             position: relative;
             z-index: 1;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 4px;
         }
         
         .env-selector {
@@ -115,38 +109,34 @@
         .env-selector select {
             flex: 1;
             padding: var(--spacing-sm) var(--spacing-md);
-            border: none;
+            border: var(--border-width) solid var(--border-color);
             border-radius: var(--radius-sm);
             font-size: 14px;
-            background-color: rgba(255,255,255,0.95);
+            background-color: var(--bg-primary);
             cursor: pointer;
             transition: all var(--transition-base);
-            box-shadow: var(--shadow-sm);
             font-weight: 500;
         }
         
         .env-selector select:hover {
-            background-color: white;
-            box-shadow: var(--shadow-md);
-            transform: translateY(-1px);
+            border-color: var(--border-hover);
         }
         
         .env-selector select:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+            border-color: var(--border-hover);
         }
         
         .env-selector button {
             padding: var(--spacing-sm) var(--spacing-md);
-            background-color: rgba(255,255,255,0.25);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border: var(--border-width) solid var(--border-color);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 18px;
             font-weight: 600;
             transition: all var(--transition-base);
-            backdrop-filter: blur(10px);
             min-width: 36px;
             height: 36px;
             display: flex;
@@ -155,9 +145,7 @@
         }
         
         .env-selector button:hover {
-            background-color: rgba(255,255,255,0.35);
-            transform: scale(1.05);
-            box-shadow: var(--shadow-sm);
+            border-color: var(--border-hover);
         }
         
         .env-selector button:active {
@@ -166,7 +154,7 @@
         
         .env-list-container {
             background-color: var(--bg-primary);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: var(--border-width) dashed var(--border-color);
             padding: var(--spacing-md) var(--spacing-lg);
             flex-shrink: 0;
         }
@@ -198,6 +186,7 @@
         .toggle-btn:hover {
             background-color: var(--bg-tertiary);
             color: var(--primary-hover);
+            text-decoration: underline;
         }
         
         .env-list {
@@ -213,7 +202,7 @@
             padding: var(--spacing-sm) var(--spacing-md);
             background-color: var(--bg-secondary);
             border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) dashed var(--border-color);
             transition: all var(--transition-base);
             cursor: pointer;
         }
@@ -221,14 +210,11 @@
         .env-item:hover {
             background-color: var(--bg-tertiary);
             border-color: var(--border-hover);
-            transform: translateX(2px);
-            box-shadow: var(--shadow-sm);
         }
         
         .env-item.active {
-            background: linear-gradient(135deg, rgba(81, 142, 255, 0.1) 0%, rgba(163, 198, 255, 0.1) 100%);
+            background-color: var(--bg-tertiary);
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(81, 142, 255, 0.1);
         }
         
         .env-info {
@@ -259,18 +245,18 @@
         
         .env-actions button {
             padding: var(--spacing-xs) var(--spacing-sm);
-            border: none;
+            border: var(--border-width) solid var(--border-color);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 11px;
             font-weight: 500;
             transition: all var(--transition-base);
-            box-shadow: var(--shadow-sm);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .env-actions button:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
         }
         
         .env-actions button:active {
@@ -278,34 +264,34 @@
         }
         
         .btn-env-edit {
-            background-color: var(--info-color);
-            color: white;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .btn-env-edit:hover {
-            background-color: var(--info-hover);
+            border-color: var(--info-hover);
         }
         
         .btn-env-delete {
-            background-color: var(--danger-color);
-            color: white;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .btn-env-delete:hover {
-            background-color: var(--danger-hover);
+            border-color: var(--danger-hover);
         }
         
         .search-box {
             padding: var(--spacing-md) var(--spacing-lg);
             background-color: var(--bg-primary);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: var(--border-width) dashed var(--border-color);
             flex-shrink: 0;
         }
         
         .search-box input {
             width: 100%;
             padding: var(--spacing-sm) var(--spacing-md);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) dashed var(--border-color);
             border-radius: var(--radius-md);
             font-size: 14px;
             background-color: var(--bg-secondary);
@@ -321,7 +307,6 @@
             outline: none;
             border-color: var(--primary-color);
             background-color: var(--bg-primary);
-            box-shadow: 0 0 0 3px rgba(81, 142, 255, 0.1);
         }
         
         .account-list {
@@ -358,15 +343,12 @@
             margin-bottom: var(--spacing-sm);
             background-color: var(--bg-primary);
             border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
+            border: var(--border-width) dashed var(--border-color);
             transition: all var(--transition-base);
             cursor: pointer;
         }
         
         .account-item:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
             border-color: var(--border-hover);
         }
         
@@ -412,18 +394,18 @@
         
         .account-actions button {
             padding: var(--spacing-sm) var(--spacing-md);
-            border: none;
+            border: var(--border-width) solid var(--border-color);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
             transition: all var(--transition-base);
-            box-shadow: var(--shadow-sm);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .account-actions button:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
         }
         
         .account-actions button:active {
@@ -431,73 +413,50 @@
         }
         
         .btn-edit {
-            background-color: var(--info-color);
-            color: white;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .btn-edit:hover {
-            background-color: var(--info-hover);
+            border-color: var(--info-hover);
         }
         
         .btn-delete {
-            background-color: var(--danger-color);
-            color: white;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .btn-delete:hover {
-            background-color: var(--danger-hover);
+            border-color: var(--danger-hover);
         }
         
         .footer {
             padding: var(--spacing-md) var(--spacing-lg);
             background-color: var(--bg-primary);
-            border-top: 1px solid var(--border-color);
+            border-top: var(--border-width) dashed var(--border-color);
             flex-shrink: 0;
             position: sticky;
             bottom: 0;
             z-index: 10;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
         }
         
         .add-account {
             width: 100%;
             padding: var(--spacing-md);
-            background: var(--primary-gradient);
-            color: white;
-            border: none;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: var(--border-width) solid var(--border-color);
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
             transition: all var(--transition-base);
-            box-shadow: var(--shadow-md);
             position: relative;
             overflow: hidden;
         }
         
-        .add-account::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left var(--transition-slow);
-        }
-        
         .add-account:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .add-account:hover::before {
-            left: 100%;
-        }
-        
-        .add-account:active {
-            transform: translateY(0);
-            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
         }
         
         .empty-state {
@@ -527,8 +486,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+            background-color: rgba(0, 0, 0, 0.3);
             z-index: 1000;
             align-items: center;
             justify-content: center;
@@ -567,15 +525,14 @@
             max-width: 420px;
             max-height: 85vh;
             overflow-y: auto;
-            box-shadow: var(--shadow-xl);
             animation: slideUp var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) dashed var(--border-color);
         }
         
         .modal-header {
             margin-bottom: var(--spacing-xl);
             padding-bottom: var(--spacing-md);
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: var(--border-width) dashed var(--border-color);
         }
         
         .modal-header h2 {
@@ -601,7 +558,7 @@
         .form-group input {
             width: 100%;
             padding: var(--spacing-sm) var(--spacing-md);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) dashed var(--border-color);
             border-radius: var(--radius-md);
             font-size: 14px;
             background-color: var(--bg-secondary);
@@ -617,13 +574,12 @@
             outline: none;
             border-color: var(--primary-color);
             background-color: var(--bg-primary);
-            box-shadow: 0 0 0 3px rgba(81, 142, 255, 0.1);
         }
         
         .form-group textarea {
             width: 100%;
             padding: var(--spacing-sm) var(--spacing-md);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) dashed var(--border-color);
             border-radius: var(--radius-md);
             font-size: 14px;
             background-color: var(--bg-secondary);
@@ -642,7 +598,6 @@
             outline: none;
             border-color: var(--primary-color);
             background-color: var(--bg-primary);
-            box-shadow: 0 0 0 3px rgba(81, 142, 255, 0.1);
         }
         
         /* 密码输入框容器 */
@@ -714,7 +669,7 @@
             justify-content: flex-end;
             margin-top: var(--spacing-xl);
             padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--border-color);
+            border-top: var(--border-width) dashed var(--border-color);
         }
         
         .form-actions button {
@@ -731,29 +686,22 @@
         .btn-cancel {
             background-color: var(--bg-secondary);
             color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) solid var(--border-color);
         }
         
         .btn-cancel:hover {
             background-color: var(--bg-tertiary);
             border-color: var(--border-hover);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-sm);
         }
         
         .btn-submit {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: var(--shadow-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: var(--border-width) solid var(--border-color);
         }
         
         .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .btn-submit:active {
-            transform: translateY(0);
+            border-color: var(--border-hover);
         }
         
         .error-message {
@@ -763,9 +711,9 @@
             display: none;
             font-weight: 500;
             padding: var(--spacing-xs) var(--spacing-sm);
-            background-color: rgba(239, 68, 68, 0.1);
+            background-color: var(--bg-primary);
             border-radius: var(--radius-sm);
-            border-left: 3px solid var(--danger-color);
+            border: var(--border-width) solid var(--danger-color);
         }
         
         .error-message.show {
@@ -789,7 +737,7 @@
             padding: var(--spacing-sm) var(--spacing-md);
             background-color: var(--bg-secondary);
             color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            border: var(--border-width) solid var(--border-color);
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 13px;
@@ -799,18 +747,11 @@
             align-items: center;
             justify-content: center;
             gap: var(--spacing-xs);
-            box-shadow: var(--shadow-sm);
         }
         
         .btn-import-export:hover {
             background-color: var(--bg-tertiary);
             border-color: var(--border-hover);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-import-export:active {
-            transform: translateY(0);
         }
         
         .btn-import-export svg {

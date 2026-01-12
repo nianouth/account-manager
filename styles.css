@@ -6,24 +6,23 @@
  */
 
 :root {
-    /* 颜色系统（与popup.html保持一致） */
-    --primary-gradient: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%);
-    --primary-color: #518EFF;
-    --primary-hover: #3A80F0;
-    --success-color: #00CC66;
-    --success-hover: #00B359;
-    --danger-color: #ef4444;
-    --info-color: #518EFF;
-    --info-hover: #3A80F0;
+    /* 线条风格颜色系统（与popup.html保持一致） */
+    --primary-color: #999999;
+    --primary-hover: #666666;
+    --success-color: #999999;
+    --success-hover: #666666;
+    --danger-color: #999999;
+    --info-color: #999999;
+    --info-hover: #666666;
     
     --bg-primary: #ffffff;
-    --bg-secondary: #E6EFFB;
-    --bg-tertiary: #A3C6FF;
-    --border-color: #E0E0E0;
-    --border-hover: #CCCCCC;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f9f9f9;
+    --border-color: #cccccc;
+    --border-hover: #999999;
     --text-primary: #333333;
     --text-secondary: #666666;
-    --text-tertiary: #CCCCCC;
+    --text-tertiary: #999999;
     
     --spacing-xs: 4px;
     --spacing-sm: 8px;
@@ -35,10 +34,8 @@
     --radius-md: 8px;
     --radius-lg: 12px;
     
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --border-width: 1px;
+    --border-width-thick: 2px;
     
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -53,15 +50,16 @@
     max-width: calc(100vw - 20px) !important;
     max-height: calc(100vh - 20px) !important;
     background: #ffffff !important;
+    background-image: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px) !important;
     border-radius: var(--radius-lg) !important;
-    box-shadow: var(--shadow-xl) !important;
-    border: 1px solid var(--border-color) !important;
+    border: var(--border-width) solid var(--border-color) !important;
     z-index: 2147483647 !important; /* 最大z-index值 */
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+    font-family: 'Comic Sans MS', 'Marker Felt', 'Chalkboard', 'Arial', sans-serif !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
-    transition: transform var(--transition-base), box-shadow var(--transition-base) !important;
+    transition: transform var(--transition-base), border-width var(--transition-base) !important;
     animation: fadeIn var(--transition-slow) ease-out !important;
 }
 
@@ -77,7 +75,7 @@
 }
 
 #account-manager-panel:hover {
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+    border-color: var(--border-hover) !important;
 }
 
 #account-manager-panel * {
@@ -87,9 +85,9 @@
 /* 面板头部 */
 #account-manager-panel .panel-header {
     padding: 12px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-    background: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%) !important;
-    color: white !important;
+    border-bottom: var(--border-width) dashed var(--border-color) !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
     flex-shrink: 0 !important;
 }
 
@@ -97,28 +95,31 @@
     margin: 0 0 10px 0 !important;
     font-size: 16px !important;
     font-weight: 600 !important;
-    color: white !important;
+    color: var(--text-primary) !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 2px !important;
+    text-underline-offset: 4px !important;
 }
 
 #account-manager-panel #env-select {
     width: 100% !important;
     padding: 8px 12px !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border: var(--border-width) dashed var(--border-color) !important;
     border-radius: 6px !important;
     font-size: 14px !important;
-    background-color: rgba(255, 255, 255, 0.9) !important;
+    background-color: var(--bg-primary) !important;
     cursor: pointer !important;
-    transition: background-color 0.2s !important;
+    transition: border-width 0.2s !important;
+    color: var(--text-primary) !important;
 }
 
 #account-manager-panel #env-select:hover {
-    background-color: white !important;
+    border-color: var(--border-hover) !important;
 }
 
 #account-manager-panel #env-select:focus {
     outline: none !important;
-    border-color: white !important;
-    background-color: white !important;
+    border-color: var(--border-hover) !important;
 }
 
 /* 账号列表容器 */
@@ -137,26 +138,27 @@
 }
 
 #account-manager-panel #account-list::-webkit-scrollbar-track {
-    background: #E6EFFB !important;
+    background: var(--bg-tertiary) !important;
     border-radius: 3px !important;
 }
 
 #account-manager-panel #account-list::-webkit-scrollbar-thumb {
-    background: #A3C6FF !important;
+    background: var(--border-color) !important;
     border-radius: 3px !important;
+    border: 1px solid var(--border-color) !important;
 }
 
 #account-manager-panel #account-list::-webkit-scrollbar-thumb:hover {
-    background: #518EFF !important;
+    background: var(--border-hover) !important;
 }
 
 /* 账号项样式 */
 #account-manager-panel .account-item {
     padding: 8px 10px !important;
     margin-bottom: 5px !important;
-    background-color: #ffffff !important;
+    background-color: var(--bg-primary) !important;
     border-radius: 8px !important;
-    border: 1px solid #E0E0E0 !important;
+    border: var(--border-width) dashed var(--border-color) !important;
     transition: all 0.2s !important;
     cursor: default !important;
     display: flex !important;
@@ -166,9 +168,8 @@
 }
 
 #account-manager-panel .account-item:hover {
-    background-color: #E6EFFB !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 2px 8px rgba(81, 142, 255, 0.15) !important;
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-hover) !important;
 }
 
 /* 账号信息区域 */
@@ -186,9 +187,9 @@
 /* 登录按钮 */
 #account-manager-panel .login-btn {
     padding: 4px 12px !important;
-    background-color: #518EFF !important;
-    color: white !important;
-    border: none !important;
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: var(--border-width) solid var(--border-color) !important;
     border-radius: 6px !important;
     cursor: pointer !important;
     font-size: 12px !important;
@@ -199,21 +200,16 @@
 }
 
 #account-manager-panel .login-btn:hover {
-    background-color: #3A80F0 !important;
-    transform: scale(1.02) !important;
-}
-
-#account-manager-panel .login-btn:active {
-    transform: scale(0.98) !important;
+    border-color: var(--border-hover) !important;
 }
 
 /* 添加账号按钮 */
 #account-manager-panel #add-account-btn {
     width: 100% !important;
     padding: 10px !important;
-    background: linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%) !important;
-    color: white !important;
-    border: none !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: var(--border-width) solid var(--border-color) !important;
     border-radius: 6px !important;
     cursor: pointer !important;
     font-size: 14px !important;
@@ -223,20 +219,14 @@
 }
 
 #account-manager-panel #add-account-btn:hover {
-    transform: scale(1.02) !important;
-    box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4) !important;
-}
-
-#account-manager-panel #add-account-btn:active {
-    transform: scale(0.98) !important;
+    border-color: var(--border-hover) !important;
 }
 
 /* 拖拽样式 */
 #account-manager-panel.dragging {
     cursor: move !important;
     opacity: 0.9 !important;
-    transform: scale(1.02) !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25) !important;
+    border-color: var(--border-hover) !important;
 }
 
 #account-manager-panel .panel-header {
