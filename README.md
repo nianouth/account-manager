@@ -130,7 +130,7 @@
 克隆或下载项目到本地：
 
 ```bash
-git clone http://121.42.43.167:10010/zhangjianlong/account-manager.git
+git clone https://github.com/nianouth/account-manager.git
 cd account-manager
 ```
 
@@ -555,8 +555,8 @@ account-manager/
 
 如有问题或建议，请通过以下方式联系：
 
-- **GitLab**：http://121.42.43.167:10010/zhangjianlong/account-manager.git
-- **Issues**：在 GitLab 仓库提交 Issue
+- **Github**：https://github.com/nianouth/account-manager.git
+- **Issues**：在 Github 仓库提交 Issue
 
 ---
 
