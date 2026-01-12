@@ -4,16 +4,16 @@ AI 生成 账号管理器导入json文件
 
 环境列表：
 1、test1
-登录地址：http://www.staging1.quanfangtongvip.com/
+登录地址：https://test1.example.com/
 
 2、test2
-登录地址：http://www.staging2.quanfangtongvip.com/
+登录地址：https://test2.example.com/
 
 账号列表：
 
 Test1
 
-nianouth（用户名）  17640337731（账号）  123456xk（密码）    test1环境【admin公司】（备注） 
+example_user（用户名）  example@example.com（账号）  example_password（密码）    test1环境【示例公司】（备注） 
 
 
 示例json【缺省值默认即可】：
