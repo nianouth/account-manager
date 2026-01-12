@@ -131,7 +131,7 @@ class AccountManager {
   constructor() {
     this.currentEnvId = null;
     this.currentAccountId = null;
-    this.currentEnvIdForEdit = null; // 用于编辑环境
+    this.currentEnvIdForEdit = null; // 用于编辑网站
     this.searchTerm = '';
     this.envModal = new ModalManager('envModal');
     this.accountModal = new ModalManager('accountModal');
@@ -142,7 +142,7 @@ class AccountManager {
   init() {
     this.setupEventListeners();
     this.loadEnvironments();
-    // 初始化环境列表显示状态
+    // 初始化网站列表显示状态
     const envListContainer = document.getElementById('envListContainer');
     const envList = document.getElementById('envList');
     const toggleBtn = document.getElementById('toggleEnvList');
@@ -159,19 +159,19 @@ class AccountManager {
   }
   
   setupEventListeners() {
-    // 环境选择
+    // 网站选择
     const envSelect = document.getElementById('envSelect');
     envSelect?.addEventListener('change', (e) => {
       this.switchEnvironment(e.target.value);
     });
     
-    // 添加环境按钮
+    // 添加网站按钮
     const addEnvBtn = document.getElementById('addEnvBtn');
     addEnvBtn?.addEventListener('click', () => {
       this.openEnvModal();
     });
     
-    // 切换环境列表显示
+    // 切换网站列表显示
     const toggleEnvList = document.getElementById('toggleEnvList');
     toggleEnvList?.addEventListener('click', () => {
       this.toggleEnvList();
@@ -190,7 +190,7 @@ class AccountManager {
       this.loadAccounts(this.currentEnvId);
     });
     
-    // 环境表单
+    // 网站表单
     const envForm = document.getElementById('envForm');
     envForm?.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -282,14 +282,14 @@ class AccountManager {
       environments.forEach(env => {
         const option = document.createElement('option');
         option.value = env.id;
-        option.textContent = env.name || '未命名环境';
+        option.textContent = env.name || '未命名网站';
         envSelect.appendChild(option);
       });
       
-      // 更新环境列表显示
+      // 更新网站列表显示
       this.renderEnvList(environments);
     } catch (error) {
-      console.error('加载环境失败:', error);
+      console.error('加载网站失败:', error);
     }
   }
   
@@ -302,7 +302,7 @@ class AccountManager {
     if (environments.length === 0) {
       envList.innerHTML = `
         <div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
-          暂无环境，点击"+"添加
+          暂无网站，点击"+"添加
         </div>
       `;
       return;
@@ -328,7 +328,7 @@ class AccountManager {
     
     const envName = document.createElement('div');
     envName.className = 'env-name';
-    safeSetTextContent(envName, env.name || '未命名环境');
+    safeSetTextContent(envName, env.name || '未命名网站');
     
     const envLoginUrl = document.createElement('div');
     envLoginUrl.className = 'env-domain';
@@ -356,7 +356,7 @@ class AccountManager {
       this.handleDeleteEnv(env.id);
     });
     
-    // 点击环境项切换环境
+    // 点击网站项切换网站
     item.addEventListener('click', (e) => {
       if (e.target.tagName !== 'BUTTON') {
         this.switchEnvironment(env.id);
@@ -400,7 +400,7 @@ class AccountManager {
   switchEnvironment(envId) {
     this.currentEnvId = envId;
     this.loadAccounts(envId);
-    // 更新环境列表中的活动状态
+    // 更新网站列表中的活动状态
     this.updateEnvListActiveState();
   }
   
@@ -424,7 +424,7 @@ class AccountManager {
       accountList.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">📋</div>
-          <div>请先选择环境</div>
+          <div>请先选择网站</div>
         </div>
       `;
       return;
@@ -447,7 +447,7 @@ class AccountManager {
         accountList.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">🔍</div>
-            <div>${this.searchTerm ? '未找到匹配的账号' : '该环境暂无账号'}</div>
+            <div>${this.searchTerm ? '未找到匹配的账号' : '该网站暂无账号'}</div>
           </div>
         `;
         return;
@@ -550,7 +550,7 @@ class AccountManager {
         password: decryptedPassword
       };
       
-      // 获取当前环境的登录按钮配置
+      // 获取当前网站的登录按钮配置
       const envResult = await chrome.storage.local.get('environments');
       const environments = envResult.environments || [];
       const currentEnv = environments.find(e => e.id === account.envId);
@@ -673,13 +673,13 @@ class AccountManager {
   openEnvModal(envId = null) {
     const title = document.getElementById('envModalTitle');
     if (title) {
-      title.textContent = envId ? '编辑环境' : '添加环境';
+      title.textContent = envId ? '编辑网站' : '添加网站';
     }
     
     this.currentEnvIdForEdit = envId;
     
     if (envId) {
-      // 编辑模式：加载环境数据
+      // 编辑模式：加载网站数据
       chrome.storage.local.get('environments', (result) => {
         const environments = result.environments || [];
         const env = environments.find(e => e.id === envId);
@@ -707,7 +707,7 @@ class AccountManager {
     const relatedAccounts = accounts.filter(acc => acc.envId === envId);
     
     if (relatedAccounts.length > 0) {
-      const confirmMsg = `该环境下有 ${relatedAccounts.length} 个账号，删除环境将同时删除这些账号。确定要删除吗？`;
+      const confirmMsg = `该网站下有 ${relatedAccounts.length} 个账号，删除网站将同时删除这些账号。确定要删除吗？`;
       if (!confirm(confirmMsg)) {
         return;
       }
@@ -716,7 +716,7 @@ class AccountManager {
       const filteredAccounts = accounts.filter(acc => acc.envId !== envId);
       await chrome.storage.local.set({ accounts: filteredAccounts });
     } else {
-      if (!confirm('确定要删除这个环境吗？')) {
+      if (!confirm('确定要删除这个网站吗？')) {
         return;
       }
     }
@@ -727,7 +727,7 @@ class AccountManager {
       const filtered = environments.filter(e => e.id !== envId);
       await chrome.storage.local.set({ environments: filtered });
       
-      // 如果删除的是当前选中的环境，清空选择
+      // 如果删除的是当前选中的网站，清空选择
       if (this.currentEnvId === envId) {
         this.currentEnvId = null;
         const envSelect = document.getElementById('envSelect');
@@ -739,14 +739,14 @@ class AccountManager {
       
       await this.loadEnvironments();
     } catch (error) {
-      console.error('删除环境失败:', error);
+      console.error('删除网站失败:', error);
       alert('删除失败: ' + error.message);
     }
   }
   
   openAccountModal(accountId = null) {
     if (!this.currentEnvId) {
-      alert('请先选择环境');
+      alert('请先选择网站');
       return;
     }
     
@@ -843,7 +843,7 @@ class AccountManager {
     hideError('envLoginButtonClassError');
     
     if (!name) {
-      showError('envNameError', '环境名称不能为空');
+      showError('envNameError', '网站名称不能为空');
       isValid = false;
     }
     
@@ -881,7 +881,7 @@ class AccountManager {
           await chrome.storage.local.set({ environments });
           await this.loadEnvironments();
           
-          // 如果编辑的是当前选中的环境，更新选择器
+          // 如果编辑的是当前选中的网站，更新选择器
           if (this.currentEnvId === this.currentEnvIdForEdit) {
             const envSelect = document.getElementById('envSelect');
             if (envSelect) {
@@ -893,7 +893,7 @@ class AccountManager {
           this.resetEnvForm();
           
           // 显示成功提示
-          showSuccessMessage('环境更新成功');
+          showSuccessMessage('网站更新成功');
         }
       } else {
         // 添加模式
@@ -908,29 +908,29 @@ class AccountManager {
         environments.push(newEnv);
         await chrome.storage.local.set({ environments });
         
-        // 先设置当前环境ID，这样渲染时能正确显示活动状态
+        // 先设置当前网站ID，这样渲染时能正确显示活动状态
         this.currentEnvId = newEnv.id;
         
-        // 更新环境选择器
+        // 更新网站选择器
         const envSelect = document.getElementById('envSelect');
         if (envSelect) {
           envSelect.value = newEnv.id;
         }
         
-        // 重新加载环境列表（此时currentEnvId已设置，会正确显示活动状态）
+        // 重新加载网站列表（此时currentEnvId已设置，会正确显示活动状态）
         await this.loadEnvironments();
         
-        // 加载该环境的账号列表
+        // 加载该网站的账号列表
         await this.loadAccounts(newEnv.id);
         
         this.envModal.close();
         this.resetEnvForm();
         
         // 显示成功提示
-        showSuccessMessage('环境添加成功');
+          showSuccessMessage('网站添加成功');
       }
     } catch (error) {
-      console.error('保存环境失败:', error);
+      console.error('保存网站失败:', error);
       alert('保存失败: ' + error.message);
     }
   }
@@ -966,9 +966,9 @@ class AccountManager {
     
     if (!isValid) return;
     
-    // 再次检查环境ID（防止在添加过程中环境被删除）
+    // 再次检查网站ID（防止在添加过程中网站被删除）
     if (!this.currentEnvId) {
-      alert('环境已不存在，请重新选择环境');
+      alert('网站已不存在，请重新选择网站');
       this.accountModal.close();
       return;
     }
@@ -1011,9 +1011,9 @@ class AccountManager {
         }
       } else {
         // 添加模式
-        // 再次确认环境ID有效
+        // 再次确认网站ID有效
         if (!this.currentEnvId) {
-          alert('环境ID无效，请重新选择环境');
+          alert('网站ID无效，请重新选择网站');
           this.accountModal.close();
           return;
         }
@@ -1134,7 +1134,7 @@ class AccountManager {
       // 确认导入
       const envCount = importData.environments?.length || 0;
       const accountCount = importData.accounts?.length || 0;
-      const confirmMsg = `即将导入 ${envCount} 个环境和 ${accountCount} 个账号。\n\n` +
+      const confirmMsg = `即将导入 ${envCount} 个网站和 ${accountCount} 个账号。\n\n` +
                         `注意：导入会合并现有数据，相同ID的项目会被覆盖。\n\n` +
                         `确定要继续吗？`;
       
@@ -1151,7 +1151,7 @@ class AccountManager {
         await this.loadAccounts(this.currentEnvId);
       }
       
-      showSuccessMessage(`导入成功：${envCount} 个环境，${accountCount} 个账号`);
+      showSuccessMessage(`导入成功：${envCount} 个网站，${accountCount} 个账号`);
     } catch (error) {
       console.error('导入失败:', error);
       alert('导入失败: ' + error.message);
@@ -1174,7 +1174,7 @@ class AccountManager {
       return { valid: false, error: '数据格式无效' };
     }
     
-    // 验证环境数据
+    // 验证网站数据
     if (data.environments) {
       if (!Array.isArray(data.environments)) {
         return { valid: false, error: 'environments 必须是数组' };
@@ -1183,7 +1183,7 @@ class AccountManager {
       for (let i = 0; i < data.environments.length; i++) {
         const env = data.environments[i];
         if (!env.name || !env.loginUrl) {
-          return { valid: false, error: `环境 ${i + 1} 缺少必需字段（name, loginUrl）` };
+          return { valid: false, error: `网站 ${i + 1} 缺少必需字段（name, loginUrl）` };
         }
       }
     }
@@ -1213,19 +1213,19 @@ class AccountManager {
       const existingEnvironments = result.environments || [];
       const existingAccounts = result.accounts || [];
       
-      // 合并环境数据
+      // 合并网站数据
       let mergedEnvironments = [...existingEnvironments];
       if (importData.environments && importData.environments.length > 0) {
         importData.environments.forEach(importEnv => {
           const existingIndex = mergedEnvironments.findIndex(e => e.id === importEnv.id);
           if (existingIndex !== -1) {
-            // 更新现有环境
+            // 更新现有网站
             mergedEnvironments[existingIndex] = {
               ...importEnv,
               updatedAt: Date.now()
             };
           } else {
-            // 添加新环境（如果没有ID，生成新ID）
+            // 添加新网站（如果没有ID，生成新ID）
             const newEnv = {
               ...importEnv,
               id: importEnv.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),

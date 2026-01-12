@@ -1,8 +1,8 @@
 AI 生成 账号管理器导入json文件
 
-环境列表如下【示例】：环境id 和 账号id 请按照下方列表自增，可以参考给出的json示例
+网站列表如下【示例】：网站id 和 账号id 请按照下方列表自增，可以参考给出的json示例
 
-环境列表：
+网站列表：
 1、test1
 登录地址：https://test1.example.com/
 
@@ -13,7 +13,7 @@ AI 生成 账号管理器导入json文件
 
 Test1
 
-example_user（用户名）  example@example.com（账号）  example_password（密码）    test1环境【示例公司】（备注） 
+example_user（用户名）  example@example.com（账号）  example_password（密码）    test1网站【示例公司】（备注） 
 
 
 示例json【缺省值默认即可】：
@@ -24,7 +24,7 @@ example_user（用户名）  example@example.com（账号）  example_password�
   "environments": [
     {
       "id": "env_001",
-      "name": "开发环境",
+      "name": "开发网站",
       "loginUrl": "https://dev.example.com/login",
       "loginButtonId": "ch_login_btn",
       "loginButtonClass": "formBtn",
@@ -39,7 +39,7 @@ example_user（用户名）  example@example.com（账号）  example_password�
       "username": "开发账号1",
       "account": "dev_user1@example.com",
       "password": "encrypted_password",
-      "note": "开发环境测试账号",
+      "note": "开发网站测试账号",
       "createdAt": 1704067200000,
       "updatedAt": 1704067200000
     }

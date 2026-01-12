@@ -232,7 +232,7 @@ class FloatingPanel {
       return true;
     });
     
-    // 监听环境变化，如果当前域名不再匹配环境，隐藏面板
+    // 监听网站变化，如果当前域名不再匹配网站，隐藏面板
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'local' && changes.environments) {
         this.checkDomainMatch();
@@ -294,7 +294,7 @@ class FloatingPanel {
     
     const matchedEnv = await matchEnvironment(currentUrl);
     if (!matchedEnv) {
-      // URL不匹配任何环境的登录页面，隐藏面板
+      // URL不匹配任何网站的登录页面，隐藏面板
       console.debug('URL不匹配登录页面，隐藏悬浮面板:', currentUrl);
       this.hidePanel();
     } else {
@@ -302,7 +302,7 @@ class FloatingPanel {
       if (this.panel && this.panel.style.display === 'none') {
         this.showPanel();
       }
-      // 切换到匹配的环境
+      // 切换到匹配的网站
       this.switchEnvironment(matchedEnv.id);
     }
   }
@@ -370,7 +370,7 @@ class FloatingPanel {
         fontSize: '14px'
       }
     });
-    const defaultOption = createElement('option', { value: '' }, ['选择环境']);
+    const defaultOption = createElement('option', { value: '' }, ['选择网站']);
     envSelect.appendChild(defaultOption);
     
     header.appendChild(title);
@@ -435,7 +435,7 @@ class FloatingPanel {
   
   showAddAccountForm() {
     if (!this.currentEnvId) {
-      alert('请先选择环境');
+      alert('请先选择网站');
       return;
     }
     
@@ -785,7 +785,7 @@ class FloatingPanel {
     }
     
     if (!this.currentEnvId) {
-      alert('环境ID无效');
+      alert('网站ID无效');
       return;
     }
     
@@ -851,11 +851,11 @@ class FloatingPanel {
       }
       
       environments.forEach(env => {
-        const option = createElement('option', { value: env.id }, [env.name || '未命名环境']);
+        const option = createElement('option', { value: env.id }, [env.name || '未命名网站']);
         envSelect.appendChild(option);
       });
     } catch (error) {
-      console.error('加载环境失败:', error);
+      console.error('加载网站失败:', error);
     }
   }
   
@@ -880,7 +880,7 @@ class FloatingPanel {
             color: '#666666',
             fontSize: '14px'
           }
-        }, ['请先选择环境']);
+        }, ['请先选择网站']);
         accountList.appendChild(emptyMsg);
       }
       return;
@@ -904,7 +904,7 @@ class FloatingPanel {
             color: '#666666',
             fontSize: '14px'
           }
-        }, ['该环境暂无账号']);
+        }, ['该网站暂无账号']);
         accountList.appendChild(emptyMsg);
         return;
       }
@@ -1022,7 +1022,7 @@ class FloatingPanel {
       // 填充表单
       this.fillLoginForm(loginForm, account);
       
-      // 获取当前环境的登录按钮配置
+      // 获取当前网站的登录按钮配置
       const envResult = await chrome.storage.local.get('environments');
       const environments = envResult.environments || [];
       const currentEnv = environments.find(e => e.id === this.currentEnvId);
@@ -1268,7 +1268,7 @@ class FloatingPanel {
   }
 }
 
-// 匹配环境（根据登录页面URL）
+// 匹配网站（根据登录页面URL）
 const matchEnvironment = async (currentUrl) => {
   if (!currentUrl) return null;
   
@@ -1285,12 +1285,12 @@ const matchEnvironment = async (currentUrl) => {
       console.debug('URL规范化失败，使用原始URL:', error);
     }
     
-    // 遍历所有环境，检查当前URL是否匹配登录页面URL
+    // 遍历所有网站，检查当前URL是否匹配登录页面URL
     for (const env of environments) {
       if (!env.loginUrl) continue;
       
       try {
-        // 规范化环境的登录URL
+        // 规范化网站的登录URL
         const envUrl = new URL(env.loginUrl);
         const normalizedEnvUrl = `${envUrl.protocol}//${envUrl.host}${envUrl.pathname}`.replace(/\/$/, '');
         
@@ -1312,14 +1312,14 @@ const matchEnvironment = async (currentUrl) => {
         // 不再使用包含匹配，因为太宽松会导致误匹配
         // 例如：登录URL是 https://example.com，当前URL是 https://example.com/dashboard 也会匹配
       } catch (error) {
-        console.debug('环境URL解析失败:', env.loginUrl, error);
+        console.debug('网站URL解析失败:', env.loginUrl, error);
         continue;
       }
     }
     
     return null;
   } catch (error) {
-    console.error('环境匹配失败:', error);
+    console.error('网站匹配失败:', error);
     return null;
   }
 };
@@ -1341,19 +1341,19 @@ const initFloatingPanel = async () => {
     return;
   }
   
-  // 检查当前URL是否匹配环境的登录页面URL
+  // 检查当前URL是否匹配网站的登录页面URL
   const matchedEnv = await matchEnvironment(currentUrl);
   if (!matchedEnv) {
-    console.debug('当前URL未匹配到任何环境的登录页面，不显示悬浮面板:', currentUrl);
+    console.debug('当前URL未匹配到任何网站的登录页面，不显示悬浮面板:', currentUrl);
     return;
   }
   
-  console.debug('URL匹配到环境:', matchedEnv.name, '登录URL:', matchedEnv.loginUrl);
+  console.debug('URL匹配到网站:', matchedEnv.name, '登录URL:', matchedEnv.loginUrl);
   
   // 等待DOM加载完成
   const initPanel = () => {
     floatingPanel = new FloatingPanel();
-    // 自动切换到匹配的环境
+    // 自动切换到匹配的网站
     if (floatingPanel && matchedEnv.id) {
       // 延迟一下确保面板已创建
       setTimeout(() => {

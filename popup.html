@@ -823,19 +823,19 @@
         <h1>账号管理器</h1>
         <div class="env-selector">
             <select id="envSelect">
-                <option value="">选择环境</option>
+                <option value="">选择网站</option>
             </select>
-            <button id="addEnvBtn" title="添加环境">+</button>
+            <button id="addEnvBtn" title="添加网站">+</button>
         </div>
     </div>
     
     <div class="env-list-container" id="envListContainer">
         <div class="env-list-header">
-            <span>环境列表</span>
+            <span>网站列表</span>
             <button id="toggleEnvList" class="toggle-btn">收起</button>
         </div>
         <div class="env-list" id="envList">
-            <!-- 环境列表将动态生成 -->
+            <!-- 网站列表将动态生成 -->
         </div>
     </div>
     
@@ -846,7 +846,7 @@
     <div class="account-list" id="accountList">
         <div class="empty-state">
             <div class="empty-state-icon">📋</div>
-            <div>请先选择环境</div>
+            <div>请先选择网站</div>
         </div>
     </div>
     
@@ -873,15 +873,15 @@
         <input type="file" id="importFileInput" accept=".json" style="display: none;">
     </div>
     
-    <!-- 环境编辑模态框 -->
+    <!-- 网站编辑模态框 -->
     <div id="envModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="envModalTitle">添加环境</h2>
+                <h2 id="envModalTitle">添加网站</h2>
             </div>
             <form id="envForm">
                 <div class="form-group">
-                    <label for="envName">环境名称 *</label>
+                    <label for="envName">网站名称 *</label>
                     <input type="text" id="envName" required>
                     <div class="error-message" id="envNameError"></div>
                 </div>

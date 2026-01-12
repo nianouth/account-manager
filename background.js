@@ -20,8 +20,8 @@ const initializeDefaultData = async () => {
     const result = await chrome.storage.local.get(['environments', 'accounts']);
     
     if (!result.environments || result.environments.length === 0) {
-      // 不初始化默认环境，让用户自己添加并设置登录页面URL
-      console.log('环境列表为空，等待用户添加');
+      // 不初始化默认网站，让用户自己添加并设置登录页面URL
+      console.log('网站列表为空，等待用户添加');
     }
     
     if (!result.accounts || result.accounts.length === 0) {
@@ -34,7 +34,7 @@ const initializeDefaultData = async () => {
   }
 };
 
-// 匹配环境（根据登录页面URL）
+// 匹配网站（根据登录页面URL）
 const matchEnvironment = async (urlString) => {
   if (!urlString) return null;
   
@@ -51,12 +51,12 @@ const matchEnvironment = async (urlString) => {
       console.debug('URL规范化失败，使用原始URL:', error);
     }
     
-    // 遍历所有环境，检查当前URL是否匹配登录页面URL
+    // 遍历所有网站，检查当前URL是否匹配登录页面URL
     for (const env of environments) {
       if (!env.loginUrl) continue;
       
       try {
-        // 规范化环境的登录URL
+        // 规范化网站的登录URL
         const envUrl = new URL(env.loginUrl);
         const normalizedEnvUrl = `${envUrl.protocol}//${envUrl.host}${envUrl.pathname}`.replace(/\/$/, '');
         
@@ -76,14 +76,14 @@ const matchEnvironment = async (urlString) => {
         // 不再使用包含匹配，因为太宽松会导致误匹配
         // 例如：登录URL是 https://example.com，当前URL是 https://example.com/dashboard 也会匹配
       } catch (error) {
-        console.debug('环境URL解析失败:', env.loginUrl, error);
+        console.debug('网站URL解析失败:', env.loginUrl, error);
         continue;
       }
     }
     
     return null;
   } catch (error) {
-    console.error('环境匹配失败:', error);
+    console.error('网站匹配失败:', error);
     return null;
   }
 };
@@ -100,7 +100,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-// 监听标签页更新，自动切换环境
+// 监听标签页更新，自动切换网站
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   // 只在页面加载完成时处理
   if (changeInfo.status !== 'complete' || !tab.url) {
@@ -126,12 +126,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       }).catch(error => {
         // 内容脚本可能未加载，忽略错误
         if (error.message !== 'Could not establish connection. Receiving end does not exist.') {
-          console.debug('发送环境切换消息失败:', error);
+          console.debug('发送网站切换消息失败:', error);
         }
       });
     }
   } catch (error) {
-    console.error('自动切换环境失败:', error);
+    console.error('自动切换网站失败:', error);
   }
 });
 

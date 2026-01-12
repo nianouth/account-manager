@@ -4,7 +4,7 @@
   "environments": [
     {
       "id": "env_001",
-      "name": "开发环境",
+      "name": "开发网站",
       "loginUrl": "https://dev.example.com/login",
       "loginButtonId": "ch_login_btn",
       "loginButtonClass": "formBtn",
@@ -13,7 +13,7 @@
     },
     {
       "id": "env_002",
-      "name": "测试环境",
+      "name": "测试网站",
       "loginUrl": "https://test.example.com/login",
       "loginButtonId": "ch_login_btn",
       "loginButtonClass": "formBtn",
@@ -22,7 +22,7 @@
     },
     {
       "id": "env_003",
-      "name": "生产环境",
+      "name": "生产网站",
       "loginUrl": "https://example.com/login",
       "loginButtonId": "ch_login_btn",
       "loginButtonClass": "formBtn",
@@ -37,7 +37,7 @@
       "username": "开发账号1",
       "account": "dev_user1@example.com",
       "password": "your_encrypted_or_plain_password_here",
-      "note": "开发环境测试账号",
+      "note": "开发网站测试账号",
       "createdAt": 1704067200000,
       "updatedAt": 1704067200000
     },
@@ -57,7 +57,7 @@
       "username": "测试账号1",
       "account": "test_user1@example.com",
       "password": "your_encrypted_or_plain_password_here",
-      "note": "测试环境账号",
+      "note": "测试网站账号",
       "createdAt": 1704067200000,
       "updatedAt": 1704067200000
     },
@@ -67,7 +67,7 @@
       "username": "生产账号1",
       "account": "prod_user1@example.com",
       "password": "your_encrypted_or_plain_password_here",
-      "note": "生产环境账号，请谨慎使用",
+      "note": "生产网站账号，请谨慎使用",
       "createdAt": 1704067200000,
       "updatedAt": 1704067200000
     }
