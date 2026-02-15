@@ -257,8 +257,10 @@
 /* 拖拽样式 */
 #account-manager-panel.dragging {
     cursor: move !important;
-    opacity: 0.9 !important;
-    border-color: var(--border-hover) !important;
+    opacity: 0.92 !important;
+    transition: none !important; /* 拖拽时禁用所有过渡动画 */
+    will-change: transform !important;
+    user-select: none !important;
 }
 
 #account-manager-panel .panel-header {

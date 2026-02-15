@@ -109,76 +109,121 @@ const showSuccessMessage = (message, duration = 2000) => {
   }, duration);
 };
 
-// 拖拽功能
+// 拖拽功能（高性能：transform + rAF）
 class PanelDragger {
   constructor(panel, header) {
     this.panel = panel;
     this.header = header;
     this.isDragging = false;
-    this.startX = 0;
-    this.startY = 0;
     this.offsetX = 0;
     this.offsetY = 0;
-    
+    this.currentX = 0;
+    this.currentY = 0;
+    this.rafId = null;
+
+    // 预绑定事件处理函数（避免重复创建）
+    this._onMouseDown = this.handleMouseDown.bind(this);
+    this._onMouseMove = this.handleMouseMove.bind(this);
+    this._onMouseUp = this.handleMouseUp.bind(this);
+    this._onTouchStart = this.handleTouchStart.bind(this);
+    this._onTouchMove = this.handleTouchMove.bind(this);
+    this._onTouchEnd = this.handleMouseUp.bind(this);
+
     this.init();
   }
-  
+
   init() {
     this.header.style.cursor = 'move';
-    this.header.addEventListener('mousedown', this.handleMouseDown.bind(this));
-    document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-    document.addEventListener('mouseup', this.handleMouseUp.bind(this));
-    
+
+    // 鼠标事件
+    this.header.addEventListener('mousedown', this._onMouseDown);
+    document.addEventListener('mousemove', this._onMouseMove, { passive: false });
+    document.addEventListener('mouseup', this._onMouseUp);
+
+    // 触摸事件（移动端支持）
+    this.header.addEventListener('touchstart', this._onTouchStart, { passive: false });
+    document.addEventListener('touchmove', this._onTouchMove, { passive: false });
+    document.addEventListener('touchend', this._onTouchEnd);
+
     // 恢复位置
     this.loadPosition();
   }
-  
+
   handleMouseDown(e) {
-    // 如果面板已折叠，不处理拖拽
-    if (this.panel.classList.contains('collapsed')) {
-      return;
-    }
-    
-    if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') {
-      return; // 不拦截表单元素
-    }
+    if (this.panel.classList.contains('collapsed')) return;
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+    e.preventDefault();
+    this.startDrag(e.clientX, e.clientY);
+  }
+
+  handleTouchStart(e) {
+    if (this.panel.classList.contains('collapsed')) return;
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+    const touch = e.touches[0];
+    this.startDrag(touch.clientX, touch.clientY);
+  }
+
+  startDrag(clientX, clientY) {
     this.isDragging = true;
     this.panel.classList.add('dragging');
+
     const rect = this.panel.getBoundingClientRect();
-    this.startX = e.clientX;
-    this.startY = e.clientY;
-    this.offsetX = e.clientX - rect.left;
-    this.offsetY = e.clientY - rect.top;
-    e.preventDefault();
+    this.offsetX = clientX - rect.left;
+    this.offsetY = clientY - rect.top;
   }
-  
+
   handleMouseMove(e) {
     if (!this.isDragging) return;
-    
-    const newX = e.clientX - this.offsetX;
-    const newY = e.clientY - this.offsetY;
-    
+    e.preventDefault();
+    this.updatePosition(e.clientX, e.clientY);
+  }
+
+  handleTouchMove(e) {
+    if (!this.isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    this.updatePosition(touch.clientX, touch.clientY);
+  }
+
+  updatePosition(clientX, clientY) {
+    // 计算新位置
+    const newX = clientX - this.offsetX;
+    const newY = clientY - this.offsetY;
+
     // 限制在视口内
     const maxX = window.innerWidth - this.panel.offsetWidth;
     const maxY = window.innerHeight - this.panel.offsetHeight;
-    
-    const finalX = Math.max(0, Math.min(newX, maxX));
-    const finalY = Math.max(0, Math.min(newY, maxY));
-    
-    // 使用 setProperty 确保样式优先级，支持上下左右拖动
-    this.panel.style.setProperty('left', `${finalX}px`, 'important');
-    this.panel.style.setProperty('top', `${finalY}px`, 'important');
-    this.panel.style.setProperty('right', 'auto', 'important');
-    this.savePosition(finalX, finalY);
+
+    this.currentX = Math.max(0, Math.min(newX, maxX));
+    this.currentY = Math.max(0, Math.min(newY, maxY));
+
+    // 用 rAF 合并帧更新，避免高频重绘
+    if (!this.rafId) {
+      this.rafId = requestAnimationFrame(() => {
+        this.panel.style.setProperty('left', `${this.currentX}px`, 'important');
+        this.panel.style.setProperty('top', `${this.currentY}px`, 'important');
+        this.panel.style.setProperty('right', 'auto', 'important');
+        this.rafId = null;
+      });
+    }
   }
-  
+
   handleMouseUp() {
     if (this.isDragging) {
       this.isDragging = false;
       this.panel.classList.remove('dragging');
+
+      // 拖拽结束时才保存位置（不在每帧保存）
+      this.savePosition(this.currentX, this.currentY);
+
+      // 取消未执行的 rAF
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
     }
   }
-  
+
   savePosition(x, y) {
     try {
       localStorage.setItem('account-manager-panel-position', JSON.stringify({ x, y }));
@@ -186,15 +231,17 @@ class PanelDragger {
       console.debug('保存面板位置失败:', error);
     }
   }
-  
+
   loadPosition() {
     try {
       const saved = localStorage.getItem('account-manager-panel-position');
       if (saved) {
         const { x, y } = JSON.parse(saved);
-        this.panel.style.left = `${x}px`;
-        this.panel.style.top = `${y}px`;
-        this.panel.style.right = 'auto';
+        this.currentX = x;
+        this.currentY = y;
+        this.panel.style.setProperty('left', `${x}px`, 'important');
+        this.panel.style.setProperty('top', `${y}px`, 'important');
+        this.panel.style.setProperty('right', 'auto', 'important');
       }
     } catch (error) {
       console.debug('加载面板位置失败:', error);
