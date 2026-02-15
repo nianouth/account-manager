@@ -84,17 +84,14 @@ class AccountManager {
   }
 
   async init() {
-    // v2.0: 首先初始化安全配置
-    const securityInitialized = await this.initializeSecurity();
-
-    if (!securityInitialized) {
-      console.warn('安全初始化未完成，扩展功能受限');
-      showErrorMessage('请先完成安全设置');
-      return;
-    }
-
+    // 先加载界面，不阻塞
     this.setupTabNavigation();
     this.setupEventListeners();
+
+    // v2.0: 初始化安全配置（仅首次使用或迁移时弹窗）
+    await this.initializeSecurity();
+
+    // 加载数据（账号列表只显示用户名，不解密密码，无需主密码）
     this.loadEnvironments();
   }
 
@@ -1182,12 +1179,10 @@ class AccountManager {
     }
     
     try {
-      // 获取会话密钥（从 SecurityManager）
-      const sessionKey = await securityManager.getSessionKey();
+      // 获取会话密钥（如过期则自动提示验证）
+      const sessionKey = await this.ensureSessionKey();
       if (!sessionKey) {
-        showErrorMessage('会话已过期，请重新验证主密码');
-        // 可以在这里触发主密码验证流程
-        await this.promptMasterPasswordVerification();
+        showErrorMessage('未能获取会话密钥，请重试');
         return;
       }
 
@@ -1527,31 +1522,19 @@ class AccountManager {
       const needsMigration = await securityManager.needsMigration();
       if (needsMigration) {
         await this.promptDataMigration();
-        // 迁移完成后，检查会话是否建立
-        const sessionKey = await securityManager.getSessionKey();
-        return !!sessionKey;
+        return true;
       }
 
-      // 2. 检查是否已设置主密码
+      // 2. 检查是否已设置主密码（首次使用必须设置）
       const hasSecurityConfig = await securityManager.hasSecurityConfig();
       if (!hasSecurityConfig) {
-        // 首次使用，显示主密码设置向导
         await this.promptMasterPasswordSetup();
-        // 设置完成后，检查会话是否建立
-        const sessionKey = await securityManager.getSessionKey();
-        return !!sessionKey;
+        return true;
       }
 
-      // 3. 检查会话是否有效
-      let sessionKey = await securityManager.getSessionKey();
-      if (!sessionKey) {
-        // 会话过期，要求验证主密码
-        await this.promptMasterPasswordVerification();
-        // 验证完成后，再次检查会话
-        sessionKey = await securityManager.getSessionKey();
-      }
-
-      return !!sessionKey;
+      // 3. 不再强制验证主密码，延迟到实际需要解密/加密时再验证
+      // 通过 ensureSessionKey() 按需触发
+      return true;
     } catch (error) {
       console.error('安全初始化失败:', error);
       showErrorMessage('安全初始化失败：' + error.message);
