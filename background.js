@@ -7,6 +7,7 @@
 // ============== 会话管理 ==============
 // Service Worker 内存中的会话密钥（浏览器关闭或 Service Worker 休眠后会清除）
 let sessionKey = null;
+let sessionMode = 'default'; // 'default'(30min) | 'today' | 'browser'
 let sessionTimeout = null;
 
 // 会话超时时间（30 分钟）
@@ -195,34 +196,90 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       // ========== 会话管理 ==========
       if (request.action === 'setSessionKey') {
-        // 设置会话密钥
         sessionKey = request.keyData;
+        sessionMode = request.mode || 'default';
 
-        // 设置超时 Alarm（30 分钟后清除）
-        await chrome.alarms.create(SESSION_ALARM, {
-          delayInMinutes: 30
-        });
+        // 根据模式设置不同的超时策略
+        await chrome.alarms.clear(SESSION_ALARM);
 
-        console.log('会话密钥已设置，30 分钟后自动清除');
+        if (sessionMode === 'default') {
+          // 30分钟后清除
+          await chrome.alarms.create(SESSION_ALARM, { delayInMinutes: 30 });
+        } else if (sessionMode === 'today') {
+          // 计算到今天23:59:59的分钟数
+          const now = new Date();
+          const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+          const minutesLeft = Math.max(1, Math.ceil((endOfDay - now) / 60000));
+          await chrome.alarms.create(SESSION_ALARM, { delayInMinutes: minutesLeft });
+        }
+        // 'browser' 模式：不设置 alarm，关闭浏览器时 Service Worker 自动清除
+
+        // 同时存到 chrome.storage.session，防止 SW 休眠丢失
+        try {
+          await chrome.storage.session.set({
+            sessionKey: request.keyData,
+            sessionMode: sessionMode,
+            sessionCreatedAt: Date.now()
+          });
+        } catch (e) {
+          // chrome.storage.session 不可用时忽略
+        }
+
         sendResponse({ success: true });
         return;
       }
 
       if (request.action === 'getSessionKey') {
-        // 获取会话密钥
+        // 先检查内存
         if (sessionKey) {
           sendResponse({ success: true, keyData: sessionKey });
-        } else {
-          sendResponse({ success: false, message: '会话已过期，请重新验证主密码' });
+          return;
         }
+
+        // 内存没有（SW 重启过），从 session storage 恢复
+        try {
+          const data = await chrome.storage.session.get(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
+          if (data.sessionKey) {
+            // 检查是否过期
+            const mode = data.sessionMode || 'default';
+            const createdAt = data.sessionCreatedAt || 0;
+            const now = Date.now();
+
+            let expired = false;
+            if (mode === 'default' && (now - createdAt) > 30 * 60 * 1000) {
+              expired = true;
+            } else if (mode === 'today') {
+              const createdDate = new Date(createdAt).toDateString();
+              const todayDate = new Date(now).toDateString();
+              if (createdDate !== todayDate) expired = true;
+            }
+            // 'browser' 模式永不过期（session storage 关闭浏览器自动清除）
+
+            if (!expired) {
+              sessionKey = data.sessionKey;
+              sessionMode = mode;
+              sendResponse({ success: true, keyData: sessionKey });
+              return;
+            } else {
+              // 过期了，清除
+              await chrome.storage.session.remove(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
+            }
+          }
+        } catch (e) {
+          // chrome.storage.session 不可用
+        }
+
+        sendResponse({ success: false, message: '会话已过期，请重新验证主密码' });
         return;
       }
 
       if (request.action === 'clearSession') {
-        // 清除会话
         sessionKey = null;
+        sessionMode = 'default';
         await chrome.alarms.clear(SESSION_ALARM);
-        console.log('会话已清除');
+        try {
+          await chrome.storage.session.remove(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
+        } catch (e) {}
         sendResponse({ success: true });
         return;
       }
@@ -267,11 +324,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // 监听 Alarm 事件（会话超时）
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === SESSION_ALARM) {
-    // 会话超时，清除密钥
     sessionKey = null;
-    console.log('会话已超时，密钥已清除');
+    sessionMode = 'default';
+    try {
+      await chrome.storage.session.remove(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
+    } catch (e) {}
   }
 });
 

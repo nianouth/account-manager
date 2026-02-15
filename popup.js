@@ -1618,9 +1618,24 @@ class AccountManager {
       return;
     }
 
-    const result = await securityManager.verifyMasterPassword(password);
+    // 先用默认模式验证密码是否正确
+    const result = await securityManager.verifyMasterPassword(password, 'default');
     if (result.success) {
-      showSuccessMessage('验证成功！');
+      // 密码正确，询问会话保持方式
+      const rememberChoice = confirm(
+        '✅ 验证成功！\n\n' +
+        '是否「今日不再提示」？\n\n' +
+        '• 点击「确定」→ 今天内不再要求输入主密码\n' +
+        '• 点击「取消」→ 30 分钟后再次验证'
+      );
+
+      if (rememberChoice) {
+        // 用户选择"今日不再提示"，重新设置会话为 today 模式
+        await securityManager.verifyMasterPassword(password, 'today');
+        showSuccessMessage('已设置今日免验证');
+      } else {
+        showSuccessMessage('验证成功');
+      }
     } else {
       alert('主密码错误：' + result.message);
       await this.promptMasterPasswordVerification();

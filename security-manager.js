@@ -224,7 +224,8 @@ export class SecurityManager {
       const exportedKey = await crypto.subtle.exportKey('raw', key);
       await chrome.runtime.sendMessage({
         action: 'setSessionKey',
-        keyData: this.arrayBufferToBase64(exportedKey)
+        keyData: this.arrayBufferToBase64(exportedKey),
+        mode: 'default'
       });
 
       return { success: true, message: '主密码设置成功' };
@@ -237,9 +238,10 @@ export class SecurityManager {
   /**
    * 验证主密码
    * @param {string} inputPassword - 用户输入的密码
+   * @param {string} sessionMode - 会话模式：'default'(30分钟) | 'today'(今日有效) | 'browser'(关闭浏览器前有效)
    * @returns {Promise<{success: boolean, message: string, key?: CryptoKey}>} 验证结果和密钥
    */
-  async verifyMasterPassword(inputPassword) {
+  async verifyMasterPassword(inputPassword, sessionMode = 'default') {
     try {
       // 1. 获取安全配置
       const result = await chrome.storage.local.get('securityConfig');
@@ -264,7 +266,8 @@ export class SecurityManager {
           const exportedKey = await crypto.subtle.exportKey('raw', key);
           await chrome.runtime.sendMessage({
             action: 'setSessionKey',
-            keyData: this.arrayBufferToBase64(exportedKey)
+            keyData: this.arrayBufferToBase64(exportedKey),
+            mode: sessionMode
           });
 
           return { success: true, message: '主密码验证成功', key };
