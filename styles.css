@@ -55,37 +55,35 @@
 /* 悬浮面板基础样式 */
 #account-manager-panel {
     position: fixed !important;
-    /* top 和 right 由 JavaScript 动态控制，不在此处设置 !important */
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    /* 位置由 transform: translate3d() 控制，纯 GPU 合成 */
+    transform: translate3d(calc(100vw - 360px), 80px, 0);
     width: 340px !important;
     max-width: calc(100vw - 20px) !important;
     max-height: calc(100vh - 20px) !important;
     background: var(--bg-grouped) !important;
     border-radius: var(--radius-xl) !important;
     border: none !important;
-    z-index: 2147483647 !important; /* 最大z-index值 */
+    z-index: 2147483647 !important;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
-    transition: all var(--transition-spring) !important;
+    transition: opacity var(--transition-spring), box-shadow var(--transition-spring) !important;
     animation: fadeIn var(--transition-spring) ease-out !important;
     box-shadow: var(--shadow-lg) !important;
+    will-change: transform !important;
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 #account-manager-panel:hover {
     box-shadow: var(--shadow-lg) !important;
-    transform: scale(1.01) !important;
 }
 
 #account-manager-panel * {
@@ -294,21 +292,7 @@
     appearance: none !important;
 }
 
-/* 动画效果 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-#account-manager-panel {
-    animation: fadeIn 0.3s ease-out !important;
-}
+/* fadeIn 动画已在上方定义，此处不再重复 */
 
 /* 确保面板在所有情况下可见 */
 #account-manager-panel {

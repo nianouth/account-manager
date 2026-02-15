@@ -109,25 +109,24 @@ const showSuccessMessage = (message, duration = 2000) => {
   }, duration);
 };
 
-// 拖拽功能（高性能：transform + rAF）
+// 拖拽功能（纯 GPU 合成：translate3d + pointer events）
 class PanelDragger {
   constructor(panel, header) {
     this.panel = panel;
     this.header = header;
     this.isDragging = false;
-    this.offsetX = 0;
-    this.offsetY = 0;
     this.currentX = 0;
     this.currentY = 0;
+    // 拖拽开始时的鼠标与面板偏移
+    this.grabOffsetX = 0;
+    this.grabOffsetY = 0;
+    // 缓存面板尺寸（拖拽开始时读取一次，避免拖拽中触发 reflow）
+    this.panelW = 0;
+    this.panelH = 0;
     this.rafId = null;
-
-    // 预绑定事件处理函数（避免重复创建）
-    this._onMouseDown = this.handleMouseDown.bind(this);
-    this._onMouseMove = this.handleMouseMove.bind(this);
-    this._onMouseUp = this.handleMouseUp.bind(this);
-    this._onTouchStart = this.handleTouchStart.bind(this);
-    this._onTouchMove = this.handleTouchMove.bind(this);
-    this._onTouchEnd = this.handleMouseUp.bind(this);
+    this.needsUpdate = false;
+    this.targetX = 0;
+    this.targetY = 0;
 
     this.init();
   }
@@ -135,93 +134,86 @@ class PanelDragger {
   init() {
     this.header.style.cursor = 'move';
 
-    // 鼠标事件
-    this.header.addEventListener('mousedown', this._onMouseDown);
-    document.addEventListener('mousemove', this._onMouseMove, { passive: false });
-    document.addEventListener('mouseup', this._onMouseUp);
+    // 使用 pointer events 统一鼠标和触摸
+    this.header.addEventListener('pointerdown', this._onDown = (e) => {
+      if (this.panel.classList.contains('collapsed')) return;
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
 
-    // 触摸事件（移动端支持）
-    this.header.addEventListener('touchstart', this._onTouchStart, { passive: false });
-    document.addEventListener('touchmove', this._onTouchMove, { passive: false });
-    document.addEventListener('touchend', this._onTouchEnd);
+      e.preventDefault();
+      this.header.setPointerCapture(e.pointerId);
+
+      this.isDragging = true;
+      this.panel.classList.add('dragging');
+
+      // 仅在拖拽开始时读一次布局（唯一的 reflow）
+      const rect = this.panel.getBoundingClientRect();
+      this.panelW = rect.width;
+      this.panelH = rect.height;
+      this.grabOffsetX = e.clientX - rect.left;
+      this.grabOffsetY = e.clientY - rect.top;
+    });
+
+    this.header.addEventListener('pointermove', this._onMove = (e) => {
+      if (!this.isDragging) return;
+
+      const maxX = window.innerWidth - this.panelW;
+      const maxY = window.innerHeight - this.panelH;
+      this.targetX = Math.max(0, Math.min(e.clientX - this.grabOffsetX, maxX));
+      this.targetY = Math.max(0, Math.min(e.clientY - this.grabOffsetY, maxY));
+
+      // 标记需要更新，rAF 循环会处理
+      if (!this.needsUpdate) {
+        this.needsUpdate = true;
+        this.scheduleRender();
+      }
+    });
+
+    this.header.addEventListener('pointerup', this._onUp = (e) => {
+      if (!this.isDragging) return;
+      this.isDragging = false;
+      this.panel.classList.remove('dragging');
+
+      // 最终位置写入
+      this.currentX = this.targetX;
+      this.currentY = this.targetY;
+      this.applyPosition(this.currentX, this.currentY);
+      this.savePosition(this.currentX, this.currentY);
+
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      this.needsUpdate = false;
+    });
+
+    this.header.addEventListener('lostpointercapture', () => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        this.panel.classList.remove('dragging');
+      }
+    });
 
     // 恢复位置
     this.loadPosition();
   }
 
-  handleMouseDown(e) {
-    if (this.panel.classList.contains('collapsed')) return;
-    if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
-    e.preventDefault();
-    this.startDrag(e.clientX, e.clientY);
-  }
-
-  handleTouchStart(e) {
-    if (this.panel.classList.contains('collapsed')) return;
-    if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
-    const touch = e.touches[0];
-    this.startDrag(touch.clientX, touch.clientY);
-  }
-
-  startDrag(clientX, clientY) {
-    this.isDragging = true;
-    this.panel.classList.add('dragging');
-
-    const rect = this.panel.getBoundingClientRect();
-    this.offsetX = clientX - rect.left;
-    this.offsetY = clientY - rect.top;
-  }
-
-  handleMouseMove(e) {
-    if (!this.isDragging) return;
-    e.preventDefault();
-    this.updatePosition(e.clientX, e.clientY);
-  }
-
-  handleTouchMove(e) {
-    if (!this.isDragging) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    this.updatePosition(touch.clientX, touch.clientY);
-  }
-
-  updatePosition(clientX, clientY) {
-    // 计算新位置
-    const newX = clientX - this.offsetX;
-    const newY = clientY - this.offsetY;
-
-    // 限制在视口内
-    const maxX = window.innerWidth - this.panel.offsetWidth;
-    const maxY = window.innerHeight - this.panel.offsetHeight;
-
-    this.currentX = Math.max(0, Math.min(newX, maxX));
-    this.currentY = Math.max(0, Math.min(newY, maxY));
-
-    // 用 rAF 合并帧更新，避免高频重绘
-    if (!this.rafId) {
-      this.rafId = requestAnimationFrame(() => {
-        this.panel.style.setProperty('left', `${this.currentX}px`, 'important');
-        this.panel.style.setProperty('top', `${this.currentY}px`, 'important');
-        this.panel.style.setProperty('right', 'auto', 'important');
-        this.rafId = null;
-      });
-    }
-  }
-
-  handleMouseUp() {
-    if (this.isDragging) {
-      this.isDragging = false;
-      this.panel.classList.remove('dragging');
-
-      // 拖拽结束时才保存位置（不在每帧保存）
-      this.savePosition(this.currentX, this.currentY);
-
-      // 取消未执行的 rAF
-      if (this.rafId) {
-        cancelAnimationFrame(this.rafId);
-        this.rafId = null;
+  scheduleRender() {
+    this.rafId = requestAnimationFrame(() => {
+      if (this.needsUpdate && this.isDragging) {
+        this.applyPosition(this.targetX, this.targetY);
+        this.needsUpdate = false;
+        // 持续调度直到拖拽结束
+        if (this.isDragging) {
+          this.scheduleRender();
+        }
       }
-    }
+      this.rafId = null;
+    });
+  }
+
+  applyPosition(x, y) {
+    // translate3d 触发 GPU 合成层，不经过布局/绘制阶段
+    this.panel.style.setProperty('transform', `translate3d(${x}px, ${y}px, 0)`, 'important');
   }
 
   savePosition(x, y) {
@@ -239,9 +231,7 @@ class PanelDragger {
         const { x, y } = JSON.parse(saved);
         this.currentX = x;
         this.currentY = y;
-        this.panel.style.setProperty('left', `${x}px`, 'important');
-        this.panel.style.setProperty('top', `${y}px`, 'important');
-        this.panel.style.setProperty('right', 'auto', 'important');
+        this.applyPosition(x, y);
       }
     } catch (error) {
       console.debug('加载面板位置失败:', error);
