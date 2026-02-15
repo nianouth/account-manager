@@ -1726,6 +1726,8 @@
         </div>
     </div>
     
+    <!-- crypto-utils 需要在 content_scripts 中作为普通脚本运行，不能用 export -->
+    <script src="crypto-utils.js"></script>
     <!-- ES6 Module: popup.js 会自动导入其他模块 -->
     <script type="module" src="popup.js"></script>
 </body>

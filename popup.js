@@ -5,7 +5,8 @@
  */
 
 // ES6 模块导入
-import { cryptoUtils } from './crypto-utils.js';
+// cryptoUtils 通过 <script src="crypto-utils.js"> 全局加载（兼容 content_scripts）
+const { cryptoUtils } = window;
 import { securityManager } from './security-manager.js';
 import {
   safeSetTextContent,

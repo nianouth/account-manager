@@ -4,7 +4,7 @@
  * 符合 Chrome Extension Manifest V3 规范
  */
 
-export class CryptoUtils {
+class CryptoUtils {
   constructor() {
     this.algorithm = {
       name: 'AES-GCM',
@@ -248,5 +248,8 @@ export class CryptoUtils {
   }
 }
 
-// 导出单例（ES6 module）
-export const cryptoUtils = new CryptoUtils();
+// 创建单例并挂载到全局（兼容 content_scripts 和 popup module）
+const cryptoUtils = new CryptoUtils();
+if (typeof window !== 'undefined') {
+  window.cryptoUtils = cryptoUtils;
+}
