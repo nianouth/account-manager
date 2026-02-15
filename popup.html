@@ -6,27 +6,31 @@
     <title>账号管理器</title>
     <style>
         :root {
-            /* 线条风格颜色系统 */
-            --primary-color: #999999;
-            --primary-hover: #666666;
-            --secondary-color: #999999;
-            --success-color: #999999;
-            --success-hover: #666666;
-            --danger-color: #999999;
-            --danger-hover: #666666;
-            --warning-color: #999999;
-            --info-color: #999999;
-            --info-hover: #666666;
-            
-            /* 中性色 - 线条风格 */
+            /* 现代化配色系统 */
+            --primary-color: #518EFF;
+            --primary-hover: #3D7AFF;
+            --primary-light: #A0C3FF;
+            --secondary-color: #6C757D;
+            --success-color: #4CAF50;
+            --success-hover: #45A049;
+            --danger-color: #F44336;
+            --danger-hover: #D32F2F;
+            --warning-color: #FF9800;
+            --warning-hover: #F57C00;
+            --info-color: #2196F3;
+            --info-hover: #1976D2;
+
+            /* 中性色 */
             --bg-primary: #ffffff;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f9f9f9;
-            --border-color: #cccccc;
-            --border-hover: #999999;
+            --bg-secondary: #F8F9FA;
+            --bg-tertiary: #F0F2F5;
+            --bg-hover: #E6EFFB;
+            --border-color: #E0E0E0;
+            --border-hover: #518EFF;
             --text-primary: #333333;
             --text-secondary: #666666;
             --text-tertiary: #999999;
+            --text-muted: #CCCCCC;
             
             /* 间距系统 */
             --spacing-xs: 4px;
@@ -77,25 +81,25 @@
         }
         
         .header {
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
             padding: var(--spacing-lg);
-            border-bottom: var(--border-width) dashed var(--border-color);
+            border-bottom: none;
             flex-shrink: 0;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(81, 142, 255, 0.2);
         }
-        
+
         .header h1 {
             margin: 0 0 var(--spacing-md) 0;
             font-size: 20px;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.5px;
             position: relative;
             z-index: 1;
-            text-decoration: underline;
-            text-decoration-thickness: 2px;
-            text-underline-offset: 4px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
         .env-selector {
@@ -109,47 +113,57 @@
         .env-selector select {
             flex: 1;
             padding: var(--spacing-sm) var(--spacing-md);
-            border: var(--border-width) solid var(--border-color);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: var(--radius-sm);
             font-size: 14px;
-            background-color: var(--bg-primary);
+            background-color: rgba(255, 255, 255, 0.95);
+            color: var(--text-primary);
             cursor: pointer;
             transition: all var(--transition-base);
             font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        
+
         .env-selector select:hover {
-            border-color: var(--border-hover);
+            border-color: rgba(255, 255, 255, 0.6);
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
+
         .env-selector select:focus {
             outline: none;
-            border-color: var(--border-hover);
+            border-color: white;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
+
         .env-selector button {
             padding: var(--spacing-sm) var(--spacing-md);
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            border: var(--border-width) solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.95);
+            color: var(--primary-color);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
             transition: all var(--transition-base);
             min-width: 36px;
             height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        
+
         .env-selector button:hover {
-            border-color: var(--border-hover);
+            background-color: white;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: scale(1.05);
         }
-        
+
         .env-selector button:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
         }
         
         .env-list-container {
@@ -245,40 +259,40 @@
         
         .env-actions button {
             padding: var(--spacing-xs) var(--spacing-sm);
-            border: var(--border-width) solid var(--border-color);
+            border: none;
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 11px;
             font-weight: 500;
             transition: all var(--transition-base);
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            color: white;
         }
-        
+
         .env-actions button:hover {
-            border-color: var(--border-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
         }
-        
+
         .env-actions button:active {
             transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
         }
-        
+
         .btn-env-edit {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--info-color) 0%, #42A5F5 100%);
         }
-        
+
         .btn-env-edit:hover {
-            border-color: var(--info-hover);
+            background: linear-gradient(135deg, var(--info-hover) 0%, #1E88E5 100%);
         }
-        
+
         .btn-env-delete {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--danger-color) 0%, #EF5350 100%);
         }
-        
+
         .btn-env-delete:hover {
-            border-color: var(--danger-hover);
+            background: linear-gradient(135deg, var(--danger-hover) 0%, #C62828 100%);
         }
         
         .search-box {
@@ -343,13 +357,21 @@
             margin-bottom: var(--spacing-sm);
             background-color: var(--bg-primary);
             border-radius: var(--radius-md);
-            border: var(--border-width) dashed var(--border-color);
+            border: 2px solid var(--border-color);
             transition: all var(--transition-base);
             cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        
+
         .account-item:hover {
-            border-color: var(--border-hover);
+            border-color: var(--primary-light);
+            background-color: var(--bg-hover);
+            box-shadow: 0 3px 8px rgba(81, 142, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .account-item:last-child {
+            margin-bottom: 0;
         }
         
         .account-info {
@@ -394,40 +416,41 @@
         
         .account-actions button {
             padding: var(--spacing-sm) var(--spacing-md);
-            border: var(--border-width) solid var(--border-color);
+            border: none;
             border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
             transition: all var(--transition-base);
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        
+
         .account-actions button:hover {
-            border-color: var(--border-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
-        
+
         .account-actions button:active {
             transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
-        
+
         .btn-edit {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--info-color) 0%, #42A5F5 100%);
+            color: white;
         }
-        
+
         .btn-edit:hover {
-            border-color: var(--info-hover);
+            background: linear-gradient(135deg, var(--info-hover) 0%, #1E88E5 100%);
         }
-        
+
         .btn-delete {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--danger-color) 0%, #EF5350 100%);
+            color: white;
         }
-        
+
         .btn-delete:hover {
-            border-color: var(--danger-hover);
+            background: linear-gradient(135deg, var(--danger-hover) 0%, #C62828 100%);
         }
         
         .footer {
@@ -443,9 +466,9 @@
         .add-account {
             width: 100%;
             padding: var(--spacing-md);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            border: var(--border-width) solid var(--border-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 14px;
@@ -453,29 +476,80 @@
             transition: all var(--transition-base);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(81, 142, 255, 0.3);
         }
-        
+
         .add-account:hover {
-            border-color: var(--border-hover);
+            box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .add-account:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(81, 142, 255, 0.3);
         }
         
         .empty-state {
             text-align: center;
             padding: var(--spacing-2xl) var(--spacing-xl);
             color: var(--text-tertiary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+            animation: fadeIn 0.5s ease-out;
         }
-        
+
         .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: var(--spacing-md);
-            opacity: 0.5;
-            filter: grayscale(0.3);
+            font-size: 72px;
+            margin-bottom: var(--spacing-sm);
+            animation: float 3s ease-in-out infinite;
         }
-        
-        .empty-state div:last-child {
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .empty-state-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .empty-state-description {
             font-size: 14px;
-            font-weight: 500;
             color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 280px;
+        }
+
+        .empty-state-action {
+            margin-top: var(--spacing-md);
+        }
+
+        .empty-state-action button {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(81, 142, 255, 0.3);
+            transition: all var(--transition-base);
+        }
+
+        .empty-state-action button:hover {
+            box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4);
+            transform: translateY(-2px);
         }
         
         /* 模态框样式 */
@@ -685,23 +759,32 @@
         
         .btn-cancel {
             background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            border: var(--border-width) solid var(--border-color);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
         }
-        
+
         .btn-cancel:hover {
             background-color: var(--bg-tertiary);
-            border-color: var(--border-hover);
-        }
-        
-        .btn-submit {
-            background: var(--bg-primary);
+            border-color: var(--text-secondary);
             color: var(--text-primary);
-            border: var(--border-width) solid var(--border-color);
         }
-        
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--success-color) 0%, #66BB6A 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
         .btn-submit:hover {
-            border-color: var(--border-hover);
+            background: linear-gradient(135deg, var(--success-hover) 0%, #43A047 100%);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
         }
         
         .error-message {
@@ -735,9 +818,9 @@
         .btn-import-export {
             flex: 1;
             padding: var(--spacing-sm) var(--spacing-md);
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
-            border: var(--border-width) solid var(--border-color);
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 13px;
@@ -747,15 +830,186 @@
             align-items: center;
             justify-content: center;
             gap: var(--spacing-xs);
+            box-shadow: 0 2px 4px rgba(81, 142, 255, 0.1);
         }
-        
+
         .btn-import-export:hover {
-            background-color: var(--bg-tertiary);
-            border-color: var(--border-hover);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 8px rgba(81, 142, 255, 0.2);
+            transform: translateY(-1px);
         }
-        
+
+        .btn-import-export:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(81, 142, 255, 0.1);
+        }
+
         .btn-import-export svg {
             flex-shrink: 0;
+            transition: transform var(--transition-base);
+        }
+
+        .btn-import-export:hover svg {
+            transform: scale(1.1);
+        }
+
+        /* 复制按钮样式 */
+        .btn-copy {
+            padding: 2px 6px !important;
+            background: linear-gradient(135deg, var(--warning-color) 0%, #FFA726 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all var(--transition-base);
+            box-shadow: 0 1px 2px rgba(255, 152, 0, 0.2);
+            white-space: nowrap;
+        }
+
+        .btn-copy:hover {
+            background: linear-gradient(135deg, var(--warning-hover) 0%, #FB8C00 100%);
+            box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-copy:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(255, 152, 0, 0.2);
+        }
+
+        .btn-copy svg {
+            width: 12px;
+            height: 12px;
+            vertical-align: middle;
+        }
+
+        /* 收藏按钮样式 */
+        .btn-favorite {
+            padding: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: all var(--transition-base);
+            color: var(--text-tertiary);
+            margin-right: var(--spacing-xs);
+        }
+
+        .btn-favorite:hover {
+            transform: scale(1.2);
+            color: var(--warning-color);
+        }
+
+        .btn-favorite.active {
+            color: var(--warning-color);
+            filter: drop-shadow(0 0 4px rgba(255, 152, 0, 0.5));
+        }
+
+        .btn-favorite.active:hover {
+            transform: scale(1.1) rotate(-10deg);
+        }
+
+        /* 账号信息区域增加换行 */
+        .account-info-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            margin-bottom: 4px;
+        }
+
+        .account-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .account-info-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            min-width: 40px;
+        }
+
+        .account-info-value {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 密码强度指示器 */
+        .strength-bar {
+            flex: 1;
+            height: 4px;
+            background-color: var(--border-color);
+            border-radius: 2px;
+            transition: all var(--transition-base);
+        }
+
+        .strength-bar.active {
+            background: linear-gradient(90deg, var(--danger-color) 0%, var(--warning-color) 50%, var(--success-color) 100%);
+        }
+
+        .strength-bar[data-level="1"].active {
+            background: var(--danger-color);
+        }
+
+        .strength-bar[data-level="2"].active {
+            background: var(--warning-color);
+        }
+
+        .strength-bar[data-level="3"].active {
+            background: var(--info-color);
+        }
+
+        .strength-bar[data-level="4"].active {
+            background: var(--success-color);
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10001;
+            gap: 12px;
+        }
+
+        .loading-overlay .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border-width: 4px;
+        }
+
+        .loading-overlay .loading-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
     </style>
 </head>
@@ -883,6 +1137,16 @@
                                 <line x1="1" y1="1" x2="23" y2="23"></line>
                             </svg>
                         </button>
+                    </div>
+                    <!-- 密码强度指示器 -->
+                    <div id="passwordStrength" style="margin-top: 8px; display: none;">
+                        <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+                            <div class="strength-bar" data-level="1"></div>
+                            <div class="strength-bar" data-level="2"></div>
+                            <div class="strength-bar" data-level="3"></div>
+                            <div class="strength-bar" data-level="4"></div>
+                        </div>
+                        <div id="passwordStrengthText" style="font-size: 12px; color: var(--text-secondary);"></div>
                     </div>
                     <div class="error-message" id="accountPasswordError"></div>
                 </div>

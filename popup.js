@@ -29,32 +29,74 @@ const hideError = (elementId) => {
   }
 };
 
-// 工具函数：显示成功提示
-const showSuccessMessage = (message, duration = 2000) => {
+// 工具函数：显示 Toast 提示（通用）
+const showToast = (message, type = 'success', duration = 2000) => {
   // 移除已存在的提示
-  const existingToast = document.getElementById('success-toast');
+  const existingToast = document.getElementById('toast-message');
   if (existingToast) {
     existingToast.remove();
   }
-  
+
   const toast = document.createElement('div');
-  toast.id = 'success-toast';
+  toast.id = 'toast-message';
+
+  // 根据类型设置颜色
+  let backgroundColor, icon;
+  switch (type) {
+    case 'success':
+      backgroundColor = 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)';
+      icon = '✓';
+      break;
+    case 'error':
+      backgroundColor = 'linear-gradient(135deg, #F44336 0%, #EF5350 100%)';
+      icon = '✕';
+      break;
+    case 'warning':
+      backgroundColor = 'linear-gradient(135deg, #FF9800 0%, #FFA726 100%)';
+      icon = '⚠';
+      break;
+    case 'info':
+      backgroundColor = 'linear-gradient(135deg, #2196F3 0%, #42A5F5 100%)';
+      icon = 'ℹ';
+      break;
+    default:
+      backgroundColor = 'linear-gradient(135deg, #518EFF 0%, #A0C3FF 100%)';
+      icon = '✓';
+  }
+
   toast.style.cssText = `
     position: fixed;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #518EFF;
+    background: ${backgroundColor};
     color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     z-index: 10000;
     font-size: 14px;
+    font-weight: 500;
     animation: slideDown 0.3s ease-out;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 90%;
   `;
-  toast.textContent = message;
-  
+
+  const iconSpan = document.createElement('span');
+  iconSpan.style.cssText = `
+    font-size: 16px;
+    font-weight: bold;
+  `;
+  iconSpan.textContent = icon;
+
+  const messageSpan = document.createElement('span');
+  messageSpan.textContent = message;
+
+  toast.appendChild(iconSpan);
+  toast.appendChild(messageSpan);
+
   // 添加动画样式
   if (!document.getElementById('toast-animations')) {
     const style = document.createElement('style');
@@ -63,29 +105,29 @@ const showSuccessMessage = (message, duration = 2000) => {
       @keyframes slideDown {
         from {
           opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
+          transform: translateX(-50%) translateY(-20px) scale(0.9);
         }
         to {
           opacity: 1;
-          transform: translateX(-50%) translateY(0);
+          transform: translateX(-50%) translateY(0) scale(1);
         }
       }
       @keyframes slideUp {
         from {
           opacity: 1;
-          transform: translateX(-50%) translateY(0);
+          transform: translateX(-50%) translateY(0) scale(1);
         }
         to {
           opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
+          transform: translateX(-50%) translateY(-20px) scale(0.9);
         }
       }
     `;
     document.head.appendChild(style);
   }
-  
+
   document.body.appendChild(toast);
-  
+
   // 自动移除
   setTimeout(() => {
     toast.style.animation = 'slideUp 0.3s ease-out';
@@ -94,6 +136,12 @@ const showSuccessMessage = (message, duration = 2000) => {
     }, 300);
   }, duration);
 };
+
+// 快捷函数
+const showSuccessMessage = (message, duration = 2000) => showToast(message, 'success', duration);
+const showErrorMessage = (message, duration = 2000) => showToast(message, 'error', duration);
+const showWarningMessage = (message, duration = 2000) => showToast(message, 'warning', duration);
+const showInfoMessage = (message, duration = 2000) => showToast(message, 'info', duration);
 
 
 // 模态框管理
@@ -159,6 +207,37 @@ class AccountManager {
   }
   
   setupEventListeners() {
+    // 键盘快捷键
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd + K: 聚焦搜索框
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+
+      // Ctrl/Cmd + N: 添加新账号
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        this.openAccountModal();
+      }
+
+      // Esc: 关闭模态框
+      if (e.key === 'Escape') {
+        if (this.envModal.isOpen) {
+          this.envModal.close();
+          this.resetEnvForm();
+        }
+        if (this.accountModal.isOpen) {
+          this.accountModal.close();
+          this.resetAccountForm();
+        }
+      }
+    });
+
     // 网站选择
     const envSelect = document.getElementById('envSelect');
     envSelect?.addEventListener('change', (e) => {
@@ -240,6 +319,11 @@ class AccountManager {
         passwordToggle.classList.toggle('show-password', isPassword);
         passwordToggle.setAttribute('aria-label', isPassword ? '隐藏密码' : '显示密码');
       });
+
+      // 密码强度检测
+      passwordInput.addEventListener('input', (e) => {
+        this.checkPasswordStrength(e.target.value);
+      });
     }
     
     // 导出按钮
@@ -301,8 +385,9 @@ class AccountManager {
     
     if (environments.length === 0) {
       envList.innerHTML = `
-        <div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
-          暂无网站，点击"+"添加
+        <div class="empty-state" style="padding: 16px;">
+          <div class="empty-state-icon" style="font-size: 32px;">🏢</div>
+          <p class="empty-state-description" style="margin: 0; font-size: 12px;">暂无网站，点击 "+" 添加</p>
         </div>
       `;
       return;
@@ -423,8 +508,12 @@ class AccountManager {
     if (!envId) {
       accountList.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">📋</div>
-          <div>请先选择网站</div>
+          <div class="empty-state-icon">🌐</div>
+          <h3 class="empty-state-title">未选择网站</h3>
+          <p class="empty-state-description">请在上方选择一个网站，或者创建一个新的网站</p>
+          <div class="empty-state-action">
+            <button onclick="document.getElementById('addEnvBtn').click()">➕ 创建网站</button>
+          </div>
         </div>
       `;
       return;
@@ -434,22 +523,43 @@ class AccountManager {
       const result = await chrome.storage.local.get('accounts');
       const accounts = result.accounts || [];
       let envAccounts = accounts.filter(account => account.envId === envId);
-      
+
       // 搜索过滤
       if (this.searchTerm) {
-        envAccounts = envAccounts.filter(account => 
+        envAccounts = envAccounts.filter(account =>
           (account.username || '').toLowerCase().includes(this.searchTerm) ||
           (account.account || '').toLowerCase().includes(this.searchTerm)
         );
       }
-      
+
+      // 排序：收藏的账号在前
+      envAccounts.sort((a, b) => {
+        if (a.favorite && !b.favorite) return -1;
+        if (!a.favorite && b.favorite) return 1;
+        return 0;
+      });
+
       if (envAccounts.length === 0) {
-        accountList.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-state-icon">🔍</div>
-            <div>${this.searchTerm ? '未找到匹配的账号' : '该网站暂无账号'}</div>
-          </div>
-        `;
+        if (this.searchTerm) {
+          accountList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">🔍</div>
+              <h3 class="empty-state-title">未找到账号</h3>
+              <p class="empty-state-description">没有找到匹配"${this.searchTerm}"的账号</p>
+            </div>
+          `;
+        } else {
+          accountList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <h3 class="empty-state-title">还没有账号</h3>
+              <p class="empty-state-description">点击下方按钮添加您的第一个账号</p>
+              <div class="empty-state-action">
+                <button onclick="document.getElementById('addAccountBtn').click()">➕ 添加账号</button>
+              </div>
+            </div>
+          `;
+        }
         return;
       }
       
@@ -472,21 +582,101 @@ class AccountManager {
   createAccountItem(account) {
     const item = document.createElement('div');
     item.className = 'account-item';
-    
+
+    // 收藏按钮
+    const favoriteBtn = document.createElement('button');
+    favoriteBtn.className = 'btn-favorite';
+    favoriteBtn.innerHTML = account.favorite ? '⭐' : '☆';
+    favoriteBtn.title = account.favorite ? '取消收藏' : '收藏';
+    if (account.favorite) {
+      favoriteBtn.classList.add('active');
+    }
+    favoriteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleFavorite(account.id);
+    });
+
     const accountInfo = document.createElement('div');
     accountInfo.className = 'account-info';
-    
+    accountInfo.style.flex = '1';
+    accountInfo.style.minWidth = '0';
+
+    // 用户名行
+    const usernameRow = document.createElement('div');
+    usernameRow.style.display = 'flex';
+    usernameRow.style.alignItems = 'center';
+    usernameRow.style.marginBottom = '4px';
+
     const username = document.createElement('div');
     username.className = 'username';
+    username.style.marginBottom = '0';
     safeSetTextContent(username, account.username || '未命名');
-    
-    const accountText = document.createElement('div');
-    accountText.className = 'account-text';
-    safeSetTextContent(accountText, account.account || '');
-    
-    accountInfo.appendChild(username);
-    accountInfo.appendChild(accountText);
-    
+    usernameRow.appendChild(username);
+
+    accountInfo.appendChild(usernameRow);
+
+    // 账号行（带复制按钮）
+    const accountRow = document.createElement('div');
+    accountRow.className = 'account-info-row';
+
+    const accountLabel = document.createElement('span');
+    accountLabel.className = 'account-info-label';
+    accountLabel.textContent = '账号:';
+
+    const accountValue = document.createElement('span');
+    accountValue.className = 'account-info-value';
+    safeSetTextContent(accountValue, account.account || '');
+
+    const copyAccountBtn = document.createElement('button');
+    copyAccountBtn.className = 'btn-copy';
+    copyAccountBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    copyAccountBtn.title = '复制账号';
+    copyAccountBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.copyToClipboard(account.account || '', '账号已复制');
+    });
+
+    accountRow.appendChild(accountLabel);
+    accountRow.appendChild(accountValue);
+    accountRow.appendChild(copyAccountBtn);
+    accountInfo.appendChild(accountRow);
+
+    // 密码行（带复制按钮）
+    const passwordRow = document.createElement('div');
+    passwordRow.className = 'account-info-row';
+
+    const passwordLabel = document.createElement('span');
+    passwordLabel.className = 'account-info-label';
+    passwordLabel.textContent = '密码:';
+
+    const passwordValue = document.createElement('span');
+    passwordValue.className = 'account-info-value';
+    passwordValue.textContent = '••••••••';
+
+    const copyPasswordBtn = document.createElement('button');
+    copyPasswordBtn.className = 'btn-copy';
+    copyPasswordBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    copyPasswordBtn.title = '复制密码';
+    copyPasswordBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      // 解密密码
+      let decryptedPassword = account.password;
+      if (window.cryptoUtils && account.password) {
+        try {
+          decryptedPassword = await window.cryptoUtils.decryptPassword(account.password);
+        } catch (error) {
+          console.warn('密码解密失败，使用原密码:', error);
+          decryptedPassword = account.password;
+        }
+      }
+      this.copyToClipboard(decryptedPassword || '', '密码已复制');
+    });
+
+    passwordRow.appendChild(passwordLabel);
+    passwordRow.appendChild(passwordValue);
+    passwordRow.appendChild(copyPasswordBtn);
+    accountInfo.appendChild(passwordRow);
+
     // 备注信息
     if (account.note && account.note.trim()) {
       const accountNote = document.createElement('div');
@@ -494,31 +684,138 @@ class AccountManager {
       safeSetTextContent(accountNote, account.note.trim());
       accountInfo.appendChild(accountNote);
     }
-    
+
     const accountActions = document.createElement('div');
     accountActions.className = 'account-actions';
-    
+
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-edit';
     editBtn.textContent = '编辑';
     editBtn.addEventListener('click', () => {
       this.openAccountModal(account.id);
     });
-    
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-delete';
     deleteBtn.textContent = '删除';
     deleteBtn.addEventListener('click', () => {
       this.handleDeleteAccount(account.id);
     });
-    
+
     accountActions.appendChild(editBtn);
     accountActions.appendChild(deleteBtn);
-    
+
+    item.appendChild(favoriteBtn);
     item.appendChild(accountInfo);
     item.appendChild(accountActions);
-    
+
     return item;
+  }
+
+  // 复制到剪贴板
+  copyToClipboard(text, message = '已复制') {
+    navigator.clipboard.writeText(text).then(() => {
+      showSuccessMessage(message, 1500);
+    }).catch(err => {
+      console.error('复制失败:', err);
+      // 降级方案
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showSuccessMessage(message, 1500);
+      } catch (err) {
+        alert('复制失败，请手动复制');
+      }
+      document.body.removeChild(textarea);
+    });
+  }
+
+  // 切换收藏状态
+  async toggleFavorite(accountId) {
+    try {
+      const result = await chrome.storage.local.get('accounts');
+      const accounts = result.accounts || [];
+      const accountIndex = accounts.findIndex(a => a.id === accountId);
+
+      if (accountIndex !== -1) {
+        accounts[accountIndex].favorite = !accounts[accountIndex].favorite;
+        await chrome.storage.local.set({ accounts });
+        await this.loadAccounts(this.currentEnvId);
+        showSuccessMessage(accounts[accountIndex].favorite ? '已收藏' : '已取消收藏', 1500);
+      }
+    } catch (error) {
+      console.error('切换收藏失败:', error);
+    }
+  }
+
+  // 检测密码强度
+  checkPasswordStrength(password) {
+    const strengthIndicator = document.getElementById('passwordStrength');
+    const strengthText = document.getElementById('passwordStrengthText');
+    const strengthBars = document.querySelectorAll('.strength-bar');
+
+    if (!password || password.length === 0) {
+      if (strengthIndicator) strengthIndicator.style.display = 'none';
+      return;
+    }
+
+    if (strengthIndicator) strengthIndicator.style.display = 'block';
+
+    let strength = 0;
+    let strengthLabel = '';
+    let strengthColor = '';
+
+    // 长度检查
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+
+    // 字符类型检查
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++; // 大小写
+    if (/[0-9]/.test(password)) strength++; // 数字
+    if (/[^a-zA-Z0-9]/.test(password)) strength++; // 特殊字符
+
+    // 计算最终强度等级（1-4）
+    let level = Math.min(4, Math.ceil(strength / 1.5));
+
+    // 设置标签和颜色
+    switch (level) {
+      case 1:
+        strengthLabel = '弱';
+        strengthColor = 'var(--danger-color)';
+        break;
+      case 2:
+        strengthLabel = '中等';
+        strengthColor = 'var(--warning-color)';
+        break;
+      case 3:
+        strengthLabel = '强';
+        strengthColor = 'var(--info-color)';
+        break;
+      case 4:
+        strengthLabel = '非常强';
+        strengthColor = 'var(--success-color)';
+        break;
+    }
+
+    // 更新强度条
+    strengthBars.forEach((bar, index) => {
+      if (index < level) {
+        bar.classList.add('active');
+      } else {
+        bar.classList.remove('active');
+      }
+    });
+
+    // 更新文本
+    if (strengthText) {
+      strengthText.textContent = `密码强度：${strengthLabel}`;
+      strengthText.style.color = strengthColor;
+    }
   }
   
   async handleLogin(accountId) {

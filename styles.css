@@ -6,20 +6,23 @@
  */
 
 :root {
-    /* 线条风格颜色系统（与popup.html保持一致） */
-    --primary-color: #999999;
-    --primary-hover: #666666;
-    --success-color: #999999;
-    --success-hover: #666666;
-    --danger-color: #999999;
-    --info-color: #999999;
-    --info-hover: #666666;
-    
+    /* 现代化配色系统（与popup.html保持一致） */
+    --primary-color: #518EFF;
+    --primary-hover: #3D7AFF;
+    --primary-light: #A0C3FF;
+    --success-color: #4CAF50;
+    --success-hover: #45A049;
+    --danger-color: #F44336;
+    --danger-hover: #D32F2F;
+    --info-color: #2196F3;
+    --info-hover: #1976D2;
+
     --bg-primary: #ffffff;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f9f9f9;
-    --border-color: #cccccc;
-    --border-hover: #999999;
+    --bg-secondary: #F8F9FA;
+    --bg-tertiary: #F0F2F5;
+    --bg-hover: #E6EFFB;
+    --border-color: #E0E0E0;
+    --border-hover: #518EFF;
     --text-primary: #333333;
     --text-secondary: #666666;
     --text-tertiary: #999999;
@@ -50,17 +53,16 @@
     max-width: calc(100vw - 20px) !important;
     max-height: calc(100vh - 20px) !important;
     background: #ffffff !important;
-    background-image: 
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px) !important;
     border-radius: var(--radius-lg) !important;
-    border: var(--border-width) solid var(--border-color) !important;
+    border: 2px solid var(--border-color) !important;
     z-index: 2147483647 !important; /* 最大z-index值 */
     font-family: 'Comic Sans MS', 'Marker Felt', 'Chalkboard', 'Arial', sans-serif !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
-    transition: transform var(--transition-base), border-width var(--transition-base) !important;
+    transition: all var(--transition-base) !important;
     animation: fadeIn var(--transition-slow) ease-out !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
 @keyframes fadeIn {
@@ -75,7 +77,8 @@
 }
 
 #account-manager-panel:hover {
-    border-color: var(--border-hover) !important;
+    border-color: var(--primary-light) !important;
+    box-shadow: 0 6px 24px rgba(81, 142, 255, 0.2) !important;
 }
 
 #account-manager-panel * {
@@ -85,41 +88,45 @@
 /* 面板头部 */
 #account-manager-panel .panel-header {
     padding: 12px !important;
-    border-bottom: var(--border-width) dashed var(--border-color) !important;
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
+    border-bottom: none !important;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%) !important;
+    color: white !important;
     flex-shrink: 0 !important;
+    box-shadow: 0 2px 8px rgba(81, 142, 255, 0.2) !important;
 }
 
 #account-manager-panel h3 {
     margin: 0 0 10px 0 !important;
     font-size: 16px !important;
-    font-weight: 600 !important;
-    color: var(--text-primary) !important;
-    text-decoration: underline !important;
-    text-decoration-thickness: 2px !important;
-    text-underline-offset: 4px !important;
+    font-weight: 700 !important;
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 #account-manager-panel #env-select {
     width: 100% !important;
     padding: 8px 12px !important;
-    border: var(--border-width) dashed var(--border-color) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 6px !important;
     font-size: 14px !important;
-    background-color: var(--bg-primary) !important;
-    cursor: pointer !important;
-    transition: border-width 0.2s !important;
+    background-color: rgba(255, 255, 255, 0.95) !important;
     color: var(--text-primary) !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
 #account-manager-panel #env-select:hover {
-    border-color: var(--border-hover) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    background-color: white !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 #account-manager-panel #env-select:focus {
     outline: none !important;
-    border-color: var(--border-hover) !important;
+    border-color: white !important;
+    background-color: white !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* 账号列表容器 */
@@ -158,18 +165,21 @@
     margin-bottom: 5px !important;
     background-color: var(--bg-primary) !important;
     border-radius: 8px !important;
-    border: var(--border-width) dashed var(--border-color) !important;
+    border: 2px solid var(--border-color) !important;
     transition: all 0.2s !important;
     cursor: default !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 #account-manager-panel .account-item:hover {
-    background-color: var(--bg-tertiary) !important;
-    border-color: var(--border-hover) !important;
+    background-color: var(--bg-hover) !important;
+    border-color: var(--primary-light) !important;
+    box-shadow: 0 3px 8px rgba(81, 142, 255, 0.15) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* 账号信息区域 */
@@ -187,39 +197,54 @@
 /* 登录按钮 */
 #account-manager-panel .login-btn {
     padding: 4px 12px !important;
-    background-color: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-    border: var(--border-width) solid var(--border-color) !important;
+    background: linear-gradient(135deg, var(--success-color) 0%, #66BB6A 100%) !important;
+    color: white !important;
+    border: none !important;
     border-radius: 6px !important;
     cursor: pointer !important;
     font-size: 12px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     transition: all 0.2s !important;
     flex-shrink: 0 !important;
     white-space: nowrap !important;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2) !important;
 }
 
 #account-manager-panel .login-btn:hover {
-    border-color: var(--border-hover) !important;
+    background: linear-gradient(135deg, var(--success-hover) 0%, #43A047 100%) !important;
+    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+#account-manager-panel .login-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2) !important;
 }
 
 /* 添加账号按钮 */
 #account-manager-panel #add-account-btn {
     width: 100% !important;
     padding: 10px !important;
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-    border: var(--border-width) solid var(--border-color) !important;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%) !important;
+    color: white !important;
+    border: none !important;
     border-radius: 6px !important;
     cursor: pointer !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     transition: all 0.2s !important;
     margin-top: 10px !important;
+    box-shadow: 0 2px 8px rgba(81, 142, 255, 0.3) !important;
 }
 
 #account-manager-panel #add-account-btn:hover {
-    border-color: var(--border-hover) !important;
+    box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+#account-manager-panel #add-account-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(81, 142, 255, 0.3) !important;
 }
 
 /* 拖拽样式 */
