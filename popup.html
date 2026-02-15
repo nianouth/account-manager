@@ -6,100 +6,95 @@
     <title>账号管理器</title>
     <style>
         :root {
-            /* 现代化配色系统 */
-            --primary-color: #518EFF;
-            --primary-hover: #3D7AFF;
-            --primary-light: #A0C3FF;
-            --secondary-color: #6C757D;
-            --success-color: #4CAF50;
-            --success-hover: #45A049;
-            --danger-color: #F44336;
-            --danger-hover: #D32F2F;
-            --warning-color: #FF9800;
-            --warning-hover: #F57C00;
-            --info-color: #2196F3;
-            --info-hover: #1976D2;
+            /* iOS 配色系统 */
+            --primary-color: #007AFF;
+            --primary-hover: #0051D5;
+            --primary-light: #5AC8FA;
+            --secondary-color: #8E8E93;
+            --success-color: #34C759;
+            --success-hover: #248A3D;
+            --danger-color: #FF3B30;
+            --danger-hover: #D70015;
+            --warning-color: #FF9500;
+            --warning-hover: #C93400;
+            --info-color: #5AC8FA;
+            --info-hover: #0A84FF;
 
-            /* 中性色 */
-            --bg-primary: #ffffff;
-            --bg-secondary: #F8F9FA;
-            --bg-tertiary: #F0F2F5;
-            --bg-hover: #E6EFFB;
-            --border-color: #E0E0E0;
-            --border-hover: #518EFF;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --text-tertiary: #999999;
-            --text-muted: #CCCCCC;
-            
-            /* 间距系统 */
+            /* iOS 中性色 */
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F2F2F7;
+            --bg-tertiary: #E5E5EA;
+            --bg-hover: #E8F0FE;
+            --bg-grouped: #F2F2F7;
+            --border-color: #D1D1D6;
+            --border-hover: #007AFF;
+            --separator: rgba(60, 60, 67, 0.12);
+            --text-primary: #000000;
+            --text-secondary: #3C3C43;
+            --text-tertiary: #8E8E93;
+            --text-muted: #C7C7CC;
+
+            /* iOS 间距系统 - 更大的留白 */
             --spacing-xs: 4px;
             --spacing-sm: 8px;
-            --spacing-md: 12px;
-            --spacing-lg: 16px;
-            --spacing-xl: 20px;
-            --spacing-2xl: 24px;
-            
-            /* 圆角系统 */
-            --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-            
-            /* 线条描边系统 - 替代阴影 */
-            --border-width: 1px;
-            --border-width-thick: 2px;
-            
-            /* 过渡动画 */
-            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            --spacing-md: 16px;
+            --spacing-lg: 20px;
+            --spacing-xl: 24px;
+            --spacing-2xl: 32px;
+
+            /* iOS 圆角系统 - 更圆润 */
+            --radius-xs: 8px;
+            --radius-sm: 10px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            /* iOS 阴影系统 */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+            /* iOS 动画 - 弹性效果 */
+            --transition-spring: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: 150ms ease-out;
         }
         
-        /* 手绘风格 - 使用线条描边替代填充和阴影 */
-        
+        /* iOS 风格设计 */
+
         * {
             box-sizing: border-box;
         }
-        
+
         body {
             width: 380px;
             min-height: 500px;
             max-height: 600px;
             margin: 0;
             padding: 0;
-            font-family: 'Comic Sans MS', 'Marker Felt', 'Chalkboard', 'Arial', sans-serif;
-            background: #ffffff;
-            background-image: 
-                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px);
-            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg-grouped);
+            font-size: 15px;
+            line-height: 1.5;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             color: var(--text-primary);
-            border: var(--border-width) solid var(--border-color);
         }
-        
+
         .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            background: var(--primary-color);
             color: white;
-            padding: var(--spacing-lg);
-            border-bottom: none;
+            padding: var(--spacing-lg) var(--spacing-xl);
             flex-shrink: 0;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(81, 142, 255, 0.2);
         }
 
         .header h1 {
             margin: 0 0 var(--spacing-md) 0;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            letter-spacing: 0.5px;
-            position: relative;
-            z-index: 1;
+            letter-spacing: -0.5px;
             color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
         .env-selector {
@@ -113,28 +108,25 @@
         .env-selector select {
             flex: 1;
             padding: var(--spacing-sm) var(--spacing-md);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: var(--radius-sm);
-            font-size: 14px;
+            font-size: 13px;
             background-color: rgba(255, 255, 255, 0.95);
             color: var(--text-primary);
             cursor: pointer;
-            transition: all var(--transition-base);
-            font-weight: 500;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all var(--transition-fast);
+            font-weight: 400;
         }
 
         .env-selector select:hover {
-            border-color: rgba(255, 255, 255, 0.6);
+            border-color: rgba(255, 255, 255, 0.7);
             background-color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .env-selector select:focus {
             outline: none;
             border-color: white;
             background-color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .env-selector button {
@@ -152,13 +144,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: none;
         }
 
         .env-selector button:hover {
             background-color: white;
             border-color: rgba(255, 255, 255, 0.6);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
             transform: scale(1.05);
         }
 
@@ -167,22 +159,22 @@
         }
         
         .env-list-container {
-            background-color: var(--bg-primary);
-            border-bottom: var(--border-width) dashed var(--border-color);
-            padding: var(--spacing-md) var(--spacing-lg);
+            background-color: var(--bg-grouped);
+            border-bottom: 1px solid var(--separator);
+            padding: var(--spacing-lg) var(--spacing-xl);
             flex-shrink: 0;
         }
-        
+
         .env-list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
             font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
+            font-weight: 700;
+            color: var(--text-tertiary);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.5px;
         }
         
         .toggle-btn {
@@ -206,29 +198,32 @@
         .env-list {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-sm);
+            gap: var(--spacing-md);
         }
         
         .env-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: var(--spacing-sm) var(--spacing-md);
-            background-color: var(--bg-secondary);
-            border-radius: var(--radius-sm);
-            border: var(--border-width) dashed var(--border-color);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background-color: var(--bg-primary);
+            border-radius: var(--radius-md);
+            border: none;
+            box-shadow: var(--shadow-sm);
             transition: all var(--transition-base);
             cursor: pointer;
         }
-        
+
         .env-item:hover {
-            background-color: var(--bg-tertiary);
-            border-color: var(--border-hover);
+            background-color: var(--bg-hover);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
         }
-        
+
         .env-item.active {
-            background-color: var(--bg-tertiary);
-            border-color: var(--primary-color);
+            background-color: var(--bg-hover);
+            border: 2px solid var(--primary-color);
+            box-shadow: var(--shadow-md);
         }
         
         .env-info {
@@ -265,34 +260,34 @@
             font-size: 11px;
             font-weight: 500;
             transition: all var(--transition-base);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            box-shadow: none;
             color: white;
         }
 
         .env-actions button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+            box-shadow: none;
         }
 
         .env-actions button:active {
             transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            box-shadow: none;
         }
 
         .btn-env-edit {
-            background: linear-gradient(135deg, var(--info-color) 0%, #42A5F5 100%);
+            background: var(--info-color);
         }
 
         .btn-env-edit:hover {
-            background: linear-gradient(135deg, var(--info-hover) 0%, #1E88E5 100%);
+            background: var(--info-hover);
         }
 
         .btn-env-delete {
-            background: linear-gradient(135deg, var(--danger-color) 0%, #EF5350 100%);
+            background: var(--danger-color);
         }
 
         .btn-env-delete:hover {
-            background: linear-gradient(135deg, var(--danger-hover) 0%, #C62828 100%);
+            background: var(--danger-hover);
         }
         
         .search-box {
@@ -326,7 +321,8 @@
         .account-list {
             flex: 1;
             overflow-y: auto;
-            padding: var(--spacing-md);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            background-color: var(--bg-grouped);
             min-height: 0;
         }
         
@@ -353,21 +349,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
             background-color: var(--bg-primary);
-            border-radius: var(--radius-md);
-            border: 2px solid var(--border-color);
-            transition: all var(--transition-base);
+            border-radius: var(--radius-lg);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-spring);
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .account-item:hover {
-            border-color: var(--primary-light);
             background-color: var(--bg-hover);
-            box-shadow: 0 3px 8px rgba(81, 142, 255, 0.15);
-            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px) scale(1.01);
         }
 
         .account-item:last-child {
@@ -415,48 +410,48 @@
         }
         
         .account-actions button {
-            padding: var(--spacing-sm) var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-lg);
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius-md);
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all var(--transition-base);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            font-size: 13px;
+            font-weight: 600;
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
         }
 
         .account-actions button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
         }
 
         .account-actions button:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transform: scale(0.97);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-edit {
-            background: linear-gradient(135deg, var(--info-color) 0%, #42A5F5 100%);
+            background: var(--info-color);
             color: white;
         }
 
         .btn-edit:hover {
-            background: linear-gradient(135deg, var(--info-hover) 0%, #1E88E5 100%);
+            background: var(--info-hover);
         }
 
         .btn-delete {
-            background: linear-gradient(135deg, var(--danger-color) 0%, #EF5350 100%);
+            background: var(--danger-color);
             color: white;
         }
 
         .btn-delete:hover {
-            background: linear-gradient(135deg, var(--danger-hover) 0%, #C62828 100%);
+            background: var(--danger-hover);
         }
         
         .footer {
-            padding: var(--spacing-md) var(--spacing-lg);
-            background-color: var(--bg-primary);
-            border-top: var(--border-width) dashed var(--border-color);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            background-color: var(--bg-grouped);
+            border-top: 1px solid var(--separator);
             flex-shrink: 0;
             position: sticky;
             bottom: 0;
@@ -466,7 +461,7 @@
         .add-account {
             width: 100%;
             padding: var(--spacing-md);
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            background: var(--primary-color);
             color: white;
             border: none;
             border-radius: var(--radius-md);
@@ -476,17 +471,17 @@
             transition: all var(--transition-base);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(81, 142, 255, 0.3);
+            box-shadow: none;
         }
 
         .add-account:hover {
-            box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4);
+            box-shadow: none;
             transform: translateY(-1px);
         }
 
         .add-account:active {
             transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(81, 142, 255, 0.3);
+            box-shadow: none;
         }
         
         .empty-state {
@@ -536,19 +531,19 @@
 
         .empty-state-action button {
             padding: var(--spacing-sm) var(--spacing-lg);
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            background: var(--primary-color);
             color: white;
             border: none;
             border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(81, 142, 255, 0.3);
+            box-shadow: none;
             transition: all var(--transition-base);
         }
 
         .empty-state-action button:hover {
-            box-shadow: 0 4px 12px rgba(81, 142, 255, 0.4);
+            box-shadow: none;
             transform: translateY(-2px);
         }
         
@@ -770,21 +765,21 @@
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, var(--success-color) 0%, #66BB6A 100%);
+            background: var(--success-color);
             color: white;
             border: none;
-            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            box-shadow: none;
         }
 
         .btn-submit:hover {
-            background: linear-gradient(135deg, var(--success-hover) 0%, #43A047 100%);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            background: var(--success-hover);
+            box-shadow: none;
             transform: translateY(-1px);
         }
 
         .btn-submit:active {
             transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+            box-shadow: none;
         }
         
         .error-message {
@@ -830,20 +825,20 @@
             align-items: center;
             justify-content: center;
             gap: var(--spacing-xs);
-            box-shadow: 0 2px 4px rgba(81, 142, 255, 0.1);
+            box-shadow: none;
         }
 
         .btn-import-export:hover {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            background: var(--primary-color);
             color: white;
             border-color: var(--primary-color);
-            box-shadow: 0 4px 8px rgba(81, 142, 255, 0.2);
+            box-shadow: none;
             transform: translateY(-1px);
         }
 
         .btn-import-export:active {
             transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(81, 142, 255, 0.1);
+            box-shadow: none;
         }
 
         .btn-import-export svg {
@@ -858,7 +853,7 @@
         /* 复制按钮样式 */
         .btn-copy {
             padding: 2px 6px !important;
-            background: linear-gradient(135deg, var(--warning-color) 0%, #FFA726 100%);
+            background: var(--warning-color);
             color: white;
             border: none;
             border-radius: var(--radius-sm);
@@ -866,19 +861,19 @@
             font-size: 10px;
             font-weight: 500;
             transition: all var(--transition-base);
-            box-shadow: 0 1px 2px rgba(255, 152, 0, 0.2);
+            box-shadow: none;
             white-space: nowrap;
         }
 
         .btn-copy:hover {
-            background: linear-gradient(135deg, var(--warning-hover) 0%, #FB8C00 100%);
-            box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+            background: var(--warning-hover);
+            box-shadow: none;
             transform: translateY(-1px);
         }
 
         .btn-copy:active {
             transform: translateY(0);
-            box-shadow: 0 1px 2px rgba(255, 152, 0, 0.2);
+            box-shadow: none;
         }
 
         .btn-copy svg {
@@ -1011,62 +1006,630 @@
             color: var(--text-secondary);
             font-weight: 500;
         }
+
+        /* ==================== iOS Tab 导航 ==================== */
+
+        .app-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px 24px 14px;
+            flex-shrink: 0;
+        }
+
+        .app-header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .tab-nav {
+            display: flex;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--separator);
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 10px 0 8px;
+            border: none;
+            background: none;
+            color: var(--text-tertiary);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color var(--transition-fast);
+            position: relative;
+        }
+
+        .tab-btn .tab-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 2px;
+            background: var(--primary-color);
+            border-radius: 1px;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--text-secondary);
+        }
+
+        /* Tab 内容容器 */
+        .tab-container {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        /* ==================== 账号页面 ==================== */
+
+        .site-quick-selector {
+            padding: 16px 20px 0;
+            background: var(--bg-grouped);
+            flex-shrink: 0;
+        }
+
+        .site-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        .site-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        }
+
+        .search-box {
+            padding: 12px 20px;
+            background: var(--bg-grouped);
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        /* 账号列表 - iOS 分组风格 */
+        .account-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 16px;
+            background: var(--bg-grouped);
+            min-height: 0;
+        }
+
+        .account-list::-webkit-scrollbar {
+            width: 0;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            gap: 12px;
+        }
+
+        .account-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .account-item:active {
+            transform: scale(0.98);
+        }
+
+        .account-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .account-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .account-info .username {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-info .account-text {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-info .account-note {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: 0.7;
+        }
+
+        .account-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .account-item:hover .account-actions {
+            opacity: 1;
+        }
+
+        .account-actions button {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .account-actions button:active {
+            transform: scale(0.9);
+        }
+
+        .btn-edit {
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--primary-color);
+        }
+
+        .btn-edit:hover {
+            background: rgba(0, 122, 255, 0.2);
+        }
+
+        .btn-delete {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--danger-color);
+        }
+
+        .btn-delete:hover {
+            background: rgba(255, 59, 48, 0.2);
+        }
+
+        /* Tab 底部按钮 */
+        .tab-footer {
+            padding: 12px 20px 16px;
+            background: var(--bg-grouped);
+            flex-shrink: 0;
+        }
+
+        .btn-primary-large {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: var(--primary-color);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary-large:hover {
+            box-shadow: var(--shadow-md);
+            filter: brightness(1.05);
+        }
+
+        .btn-primary-large:active {
+            transform: scale(0.98);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+
+        .empty-state div:last-child {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* ==================== 网站页面 ==================== */
+
+        #tab-sites {
+            background: var(--bg-grouped);
+        }
+
+        #tab-sites .env-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .env-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            gap: 12px;
+        }
+
+        .env-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .env-item.active {
+            box-shadow: 0 0 0 2px var(--primary-color), var(--shadow-sm);
+        }
+
+        .env-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .env-info .env-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .env-info .env-domain {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .env-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .env-item:hover .env-actions {
+            opacity: 1;
+        }
+
+        .env-actions button {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        /* ==================== 设置页面 ==================== */
+
+        #tab-settings {
+            background: var(--bg-grouped);
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 8px 4px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--separator);
+        }
+
+        .setting-item:first-of-type {
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+        }
+
+        .setting-item:last-of-type {
+            border-bottom: none;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+        }
+
+        .setting-item:only-of-type {
+            border-radius: var(--radius-md);
+        }
+
+        .setting-label {
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .setting-value {
+            font-size: 15px;
+            color: var(--text-tertiary);
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 15px;
+            cursor: pointer;
+            padding: 0;
+            font-weight: 400;
+        }
+
+        .btn-link:hover {
+            opacity: 0.7;
+        }
+
+        /* ==================== 表单提示 ==================== */
+
+        .form-hint {
+            color: var(--text-tertiary);
+            font-size: 12px;
+            margin-top: 6px;
+            display: block;
+        }
+
+        /* 密码输入框包装 */
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper input {
+            flex: 1;
+            padding-right: 44px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 16px;
+            opacity: 0.5;
+            transition: opacity var(--transition-fast);
+        }
+
+        .toggle-password:hover {
+            opacity: 1;
+        }
+
+        /* 收藏按钮 */
+        .btn-favorite {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            line-height: 1;
+            transition: transform var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .btn-favorite:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-favorite:active {
+            transform: scale(0.9);
+        }
+
+        /* 复制按钮 */
+        .btn-copy {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--text-tertiary);
+            border-radius: var(--radius-xs);
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-copy:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--primary-color);
+        }
+
     </style>
 </head>
 <body>
-    <div class="header">
+    <!-- 顶部标题 -->
+    <header class="app-header">
         <h1>账号管理器</h1>
-        <div class="env-selector">
-            <select id="envSelect">
-                <option value="">选择网站</option>
-            </select>
-            <button id="addEnvBtn" title="添加网站">+</button>
+    </header>
+
+    <!-- Tab 导航 -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="accounts">
+            <span class="tab-icon">🔑</span>
+            <span>账号</span>
+        </button>
+        <button class="tab-btn" data-tab="sites">
+            <span class="tab-icon">🌐</span>
+            <span>网站</span>
+        </button>
+        <button class="tab-btn" data-tab="settings">
+            <span class="tab-icon">⚙️</span>
+            <span>设置</span>
+        </button>
+    </nav>
+
+    <!-- Tab 内容容器 -->
+    <main class="tab-container">
+        <!-- ===== 账号页面 ===== -->
+        <div class="tab-pane active" id="tab-accounts">
+            <div class="site-quick-selector">
+                <select id="envSelect" class="site-select">
+                    <option value="">选择网站...</option>
+                </select>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索账号..." class="search-input">
+            </div>
+            <div class="account-list" id="accountList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <div>请先选择网站</div>
+                </div>
+            </div>
+            <div class="tab-footer">
+                <button class="btn-primary-large" id="addAccountBtn">+ 添加账号</button>
+            </div>
         </div>
-    </div>
-    
-    <div class="env-list-container" id="envListContainer">
-        <div class="env-list-header">
-            <span>网站列表</span>
-            <button id="toggleEnvList" class="toggle-btn">收起</button>
+
+        <!-- ===== 网站页面 ===== -->
+        <div class="tab-pane" id="tab-sites">
+            <div class="env-list" id="envList"></div>
+            <div class="tab-footer">
+                <button class="btn-primary-large" id="addEnvBtn">+ 添加网站</button>
+            </div>
         </div>
-        <div class="env-list" id="envList">
-            <!-- 网站列表将动态生成 -->
+
+        <!-- ===== 设置页面 ===== -->
+        <div class="tab-pane" id="tab-settings">
+            <div class="settings-section">
+                <h3 class="settings-title">安全</h3>
+                <div class="setting-item">
+                    <span class="setting-label">修改主密码</span>
+                    <button class="btn-link" id="changeMasterPasswordBtn">修改 ›</button>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">会话超时</span>
+                    <span class="setting-value">30 分钟</span>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h3 class="settings-title">数据管理</h3>
+                <div class="setting-item">
+                    <span class="setting-label">导入数据</span>
+                    <button class="btn-link" id="importBtn">选择文件 ›</button>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">导出数据</span>
+                    <button class="btn-link" id="exportBtn">导出 ›</button>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h3 class="settings-title">关于</h3>
+                <div class="setting-item">
+                    <span class="setting-label">版本</span>
+                    <span class="setting-value">v2.0.0</span>
+                </div>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
         </div>
-    </div>
-    
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="搜索账号...">
-    </div>
-    
-    <div class="account-list" id="accountList">
-        <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
-            <div>请先选择网站</div>
-        </div>
-    </div>
-    
-    <div class="footer">
-        <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
-            <button class="btn-import-export" id="exportBtn" title="导出配置">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                导出
-            </button>
-            <button class="btn-import-export" id="importBtn" title="导入配置">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                导入
-            </button>
-        </div>
-        <button class="add-account" id="addAccountBtn">+ 添加账号</button>
-        <input type="file" id="importFileInput" accept=".json" style="display: none;">
-    </div>
+    </main>
     
     <!-- 网站编辑模态框 -->
     <div id="envModal" class="modal">
@@ -1163,7 +1726,7 @@
         </div>
     </div>
     
-    <script src="crypto-utils.js"></script>
-    <script src="popup.js"></script>
+    <!-- ES6 Module: popup.js 会自动导入其他模块 -->
+    <script type="module" src="popup.js"></script>
 </body>
 </html>

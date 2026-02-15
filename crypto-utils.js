@@ -4,7 +4,7 @@
  * 符合 Chrome Extension Manifest V3 规范
  */
 
-class CryptoUtils {
+export class CryptoUtils {
   constructor() {
     this.algorithm = {
       name: 'AES-GCM',
@@ -163,102 +163,90 @@ class CryptoUtils {
   }
   
   /**
-   * 使用主密码加密账号密码
-   * 主密码存储在扩展的storage中（可选：使用用户输入的主密码）
+   * 使用密钥加密账号密码
+   * @param {string} password - 原始密码
+   * @param {CryptoKey} key - 加密密钥（从 SecurityManager 获取）
+   * @returns {Promise<string>} 加密后的密码
+   * @throws {Error} 加密失败时抛出异常
    */
-  async encryptPassword(password, masterPassword = null) {
-    // 如果没有提供主密码，使用默认密钥（不安全，仅作示例）
-    // 实际应用中应该要求用户设置主密码
-    const master = masterPassword || await this.getMasterPassword();
-    
-    if (!master) {
-      // 如果没有主密码，返回原密码（不加密）
-      // 实际应用中应该强制要求设置主密码
-      console.warn('未设置主密码，密码将以明文存储（不安全）');
-      return password;
+  async encryptPassword(password, key = null) {
+    // 强制要求提供密钥，不降级为明文
+    if (!key) {
+      throw new Error('未提供加密密钥，无法加密密码');
     }
-    
-    try {
-      return await this.encrypt(password, master);
-    } catch (error) {
-      console.error('密码加密失败:', error);
-      // 加密失败时返回原密码
-      return password;
-    }
+
+    // 加密失败时抛出异常，不降级为明文
+    const encrypted = await this.encrypt(password, key);
+    return encrypted;
   }
   
   /**
-   * 解密账号密码
+   * 使用密钥解密账号密码
+   * @param {string} encryptedPassword - 加密的密码
+   * @param {CryptoKey} key - 解密密钥（从 SecurityManager 获取）
+   * @returns {Promise<string>} 解密后的密码
+   * @throws {Error} 解密失败时抛出异常
    */
-  async decryptPassword(encryptedPassword, masterPassword = null) {
-    // 如果密码不是加密格式（Base64），直接返回
+  async decryptPassword(encryptedPassword, key = null) {
+    // 检查是否为加密格式
     if (!this.isBase64(encryptedPassword)) {
-      return encryptedPassword;
+      throw new Error('密码格式不正确，不是有效的加密数据');
     }
-    
-    const master = masterPassword || await this.getMasterPassword();
-    
-    if (!master) {
-      console.warn('未设置主密码，无法解密');
-      return encryptedPassword;
+
+    // 强制要求提供密钥
+    if (!key) {
+      throw new Error('未提供解密密钥，无法解密密码');
     }
-    
-    try {
-      return await this.decrypt(encryptedPassword, master);
-    } catch (error) {
-      console.error('密码解密失败:', error);
-      return encryptedPassword;
-    }
+
+    // 解密失败时抛出异常
+    const decrypted = await this.decrypt(encryptedPassword, key);
+    return decrypted;
   }
   
   /**
-   * 获取主密码（从storage或提示用户输入）
+   * 注意：主密码管理已迁移到 SecurityManager
+   * 不再在 CryptoUtils 中存储或获取主密码
+   * 请使用 window.securityManager.initializeMasterPassword()
+   * 和 window.securityManager.verifyMasterPassword()
    */
-  async getMasterPassword() {
-    try {
-      const result = await chrome.storage.local.get('masterPassword');
-      return result.masterPassword || null;
-    } catch (error) {
-      console.error('获取主密码失败:', error);
-      return null;
-    }
-  }
   
   /**
-   * 设置主密码
-   */
-  async setMasterPassword(password) {
-    try {
-      await chrome.storage.local.set({ masterPassword: password });
-      return true;
-    } catch (error) {
-      console.error('设置主密码失败:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * 检查字符串是否为Base64格式
+   * 检查字符串是否为Base64格式的加密数据
+   * @param {string} str - 待检查的字符串
+   * @returns {boolean} 是否为有效的加密数据
    */
   isBase64(str) {
     try {
-      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-      return base64Regex.test(str) && str.length > 0;
+      // 基础检查
+      if (!str || typeof str !== 'string') {
+        return false;
+      }
+
+      // Base64 长度必须是 4 的倍数
+      if (str.length % 4 !== 0) {
+        return false;
+      }
+
+      // 严格的 Base64 正则（必须包含有效字符）
+      const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+      if (!base64Regex.test(str)) {
+        return false;
+      }
+
+      // 尝试解码并验证最小长度
+      // 加密数据格式：salt(16) + iv(12) + ciphertext(>=16) = 至少 44 字节
+      // Base64 编码后约为 60+ 字符
+      const decoded = atob(str);
+      if (decoded.length < 28) {
+        return false;
+      }
+
+      return true;
     } catch {
       return false;
     }
   }
 }
 
-// 导出单例
-const cryptoUtils = new CryptoUtils();
-
-// 如果在浏览器环境中，挂载到window
-if (typeof window !== 'undefined') {
-  window.cryptoUtils = cryptoUtils;
-}
-
-// 如果在Service Worker环境中，使用self
-if (typeof self !== 'undefined' && typeof window === 'undefined') {
-  self.cryptoUtils = cryptoUtils;
-}
+// 导出单例（ES6 module）
+export const cryptoUtils = new CryptoUtils();

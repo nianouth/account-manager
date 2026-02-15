@@ -1,7 +1,19 @@
 /**
  * 账号管理器 - 后台服务脚本
  * 符合 Chrome Extension Manifest V3 规范
+ * v2.0.0: 添加会话管理、密钥存储、数据迁移
  */
+
+// ============== 会话管理 ==============
+// Service Worker 内存中的会话密钥（浏览器关闭或 Service Worker 休眠后会清除）
+let sessionKey = null;
+let sessionTimeout = null;
+
+// 会话超时时间（30 分钟）
+const SESSION_DURATION = 30 * 60 * 1000; // 毫秒
+
+// 会话超时 Alarm 名称
+const SESSION_ALARM = 'sessionTimeout';
 
 // 工具函数：安全的存储操作
 const safeStorageOperation = (operation, errorHandler) => {
@@ -91,14 +103,55 @@ const matchEnvironment = async (urlString) => {
 // 扩展安装/更新监听
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('账号管理器扩展已安装/更新:', details.reason);
-  
+
   if (details.reason === 'install') {
     await initializeDefaultData();
+    console.log('欢迎使用账号管理器 v2.0！首次使用请设置主密码。');
   } else if (details.reason === 'update') {
-    // 更新时的迁移逻辑可以在这里处理
-    console.log('扩展已更新到版本:', chrome.runtime.getManifest().version);
+    const version = chrome.runtime.getManifest().version;
+    console.log('扩展已更新到版本:', version);
+
+    // 检测是否需要从旧版本迁移
+    const needsMigration = await checkNeedsMigration();
+    if (needsMigration) {
+      console.log('检测到旧版本数据，需要迁移到新安全系统');
+      // 自动备份旧数据
+      await backupOldData();
+    }
   }
 });
+
+/**
+ * 检测是否需要从旧版本迁移
+ */
+async function checkNeedsMigration() {
+  try {
+    const result = await chrome.storage.local.get('masterPassword');
+    return !!result.masterPassword;
+  } catch (error) {
+    console.error('检测迁移状态失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 备份旧版本数据
+ */
+async function backupOldData() {
+  try {
+    const oldData = await chrome.storage.local.get(['environments', 'accounts', 'masterPassword']);
+    await chrome.storage.local.set({
+      backup_v1_2_0: {
+        timestamp: Date.now(),
+        version: '1.2.0',
+        data: oldData
+      }
+    });
+    console.log('旧版本数据已自动备份');
+  } catch (error) {
+    console.error('备份旧数据失败:', error);
+  }
+}
 
 // 监听标签页更新，自动切换网站
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -135,11 +188,46 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 });
 
-// 消息处理：数据备份与恢复
+// 消息处理：会话管理、数据备份与恢复
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // 使用 async/await 处理异步操作
   (async () => {
     try {
+      // ========== 会话管理 ==========
+      if (request.action === 'setSessionKey') {
+        // 设置会话密钥
+        sessionKey = request.keyData;
+
+        // 设置超时 Alarm（30 分钟后清除）
+        await chrome.alarms.create(SESSION_ALARM, {
+          delayInMinutes: 30
+        });
+
+        console.log('会话密钥已设置，30 分钟后自动清除');
+        sendResponse({ success: true });
+        return;
+      }
+
+      if (request.action === 'getSessionKey') {
+        // 获取会话密钥
+        if (sessionKey) {
+          sendResponse({ success: true, keyData: sessionKey });
+        } else {
+          sendResponse({ success: false, message: '会话已过期，请重新验证主密码' });
+        }
+        return;
+      }
+
+      if (request.action === 'clearSession') {
+        // 清除会话
+        sessionKey = null;
+        await chrome.alarms.clear(SESSION_ALARM);
+        console.log('会话已清除');
+        sendResponse({ success: true });
+        return;
+      }
+
+      // ========== 数据备份与恢复 ==========
       if (request.action === 'backupData') {
         const result = await chrome.storage.local.get(['environments', 'accounts']);
         const backupData = {
@@ -151,13 +239,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true, data: backupData });
         return;
       }
-      
+
       if (request.action === 'restoreData') {
         if (!request.data || !Array.isArray(request.data.environments) || !Array.isArray(request.data.accounts)) {
           sendResponse({ success: false, error: '无效的备份数据格式' });
           return;
         }
-        
+
         await chrome.storage.local.set({
           environments: request.data.environments,
           accounts: request.data.accounts
@@ -165,7 +253,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
         return;
       }
-      
+
       // 未知操作
       sendResponse({ success: false, error: '未知的操作类型' });
     } catch (error) {
@@ -173,9 +261,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: error.message });
     }
   })();
-  
+
   // 返回 true 表示异步响应
   return true;
+});
+
+// 监听 Alarm 事件（会话超时）
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === SESSION_ALARM) {
+    // 会话超时，清除密钥
+    sessionKey = null;
+    console.log('会话已超时，密钥已清除');
+  }
 });
 
 // 错误处理

@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "账号管理器",
-  "version": "1.2.0",
-  "description": "悬浮式账号管理器，支持多网站多账号管理，安全可靠",
+  "version": "2.0.0",
+  "description": "悬浮式账号管理器，支持多网站多账号管理，安全可靠（v2.0: 增强安全性）",
   "author": "Account Manager",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"

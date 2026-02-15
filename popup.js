@@ -1,17 +1,28 @@
 /**
  * 账号管理器 - 弹出窗口脚本
  * 符合 Chrome Extension Manifest V3 规范
- * 添加输入验证、改进UI交互、错误处理
+ * v2.0: 使用 ES6 modules
  */
 
-// 工具函数：安全的文本内容设置
-const safeSetTextContent = (element, text) => {
-  if (element && text !== null && text !== undefined) {
-    element.textContent = String(text);
-  }
-};
+// ES6 模块导入
+import { cryptoUtils } from './crypto-utils.js';
+import { securityManager } from './security-manager.js';
+import {
+  safeSetTextContent,
+  createElement
+} from './utils/dom-utils.js';
+import {
+  showSuccessMessage,
+  showErrorMessage,
+  showInfoMessage
+} from './utils/toast.js';
+import {
+  validateEnvironment,
+  validateAccount,
+  checkPasswordStrength
+} from './utils/validation.js';
 
-// 工具函数：显示错误消息
+// 表单验证专用工具函数
 const showError = (elementId, message) => {
   const errorElement = document.getElementById(elementId);
   if (errorElement) {
@@ -20,7 +31,6 @@ const showError = (elementId, message) => {
   }
 };
 
-// 工具函数：隐藏错误消息
 const hideError = (elementId) => {
   const errorElement = document.getElementById(elementId);
   if (errorElement) {
@@ -28,121 +38,6 @@ const hideError = (elementId) => {
     errorElement.classList.remove('show');
   }
 };
-
-// 工具函数：显示 Toast 提示（通用）
-const showToast = (message, type = 'success', duration = 2000) => {
-  // 移除已存在的提示
-  const existingToast = document.getElementById('toast-message');
-  if (existingToast) {
-    existingToast.remove();
-  }
-
-  const toast = document.createElement('div');
-  toast.id = 'toast-message';
-
-  // 根据类型设置颜色
-  let backgroundColor, icon;
-  switch (type) {
-    case 'success':
-      backgroundColor = 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)';
-      icon = '✓';
-      break;
-    case 'error':
-      backgroundColor = 'linear-gradient(135deg, #F44336 0%, #EF5350 100%)';
-      icon = '✕';
-      break;
-    case 'warning':
-      backgroundColor = 'linear-gradient(135deg, #FF9800 0%, #FFA726 100%)';
-      icon = '⚠';
-      break;
-    case 'info':
-      backgroundColor = 'linear-gradient(135deg, #2196F3 0%, #42A5F5 100%)';
-      icon = 'ℹ';
-      break;
-    default:
-      backgroundColor = 'linear-gradient(135deg, #518EFF 0%, #A0C3FF 100%)';
-      icon = '✓';
-  }
-
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: ${backgroundColor};
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    z-index: 10000;
-    font-size: 14px;
-    font-weight: 500;
-    animation: slideDown 0.3s ease-out;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 90%;
-  `;
-
-  const iconSpan = document.createElement('span');
-  iconSpan.style.cssText = `
-    font-size: 16px;
-    font-weight: bold;
-  `;
-  iconSpan.textContent = icon;
-
-  const messageSpan = document.createElement('span');
-  messageSpan.textContent = message;
-
-  toast.appendChild(iconSpan);
-  toast.appendChild(messageSpan);
-
-  // 添加动画样式
-  if (!document.getElementById('toast-animations')) {
-    const style = document.createElement('style');
-    style.id = 'toast-animations';
-    style.textContent = `
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px) scale(0.9);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0) scale(1);
-        }
-      }
-      @keyframes slideUp {
-        from {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0) scale(1);
-        }
-        to {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px) scale(0.9);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  document.body.appendChild(toast);
-
-  // 自动移除
-  setTimeout(() => {
-    toast.style.animation = 'slideUp 0.3s ease-out';
-    setTimeout(() => {
-      toast.remove();
-    }, 300);
-  }, duration);
-};
-
-// 快捷函数
-const showSuccessMessage = (message, duration = 2000) => showToast(message, 'success', duration);
-const showErrorMessage = (message, duration = 2000) => showToast(message, 'error', duration);
-const showWarningMessage = (message, duration = 2000) => showToast(message, 'warning', duration);
-const showInfoMessage = (message, duration = 2000) => showToast(message, 'info', duration);
-
 
 // 模态框管理
 class ModalManager {
@@ -179,30 +74,58 @@ class AccountManager {
   constructor() {
     this.currentEnvId = null;
     this.currentAccountId = null;
-    this.currentEnvIdForEdit = null; // 用于编辑网站
+    this.currentEnvIdForEdit = null;
     this.searchTerm = '';
     this.envModal = new ModalManager('envModal');
     this.accountModal = new ModalManager('accountModal');
-    this.envListExpanded = true; // 默认展开
+    this.currentTab = 'accounts';
     this.init();
   }
-  
-  init() {
+
+  async init() {
+    // v2.0: 首先初始化安全配置
+    const securityInitialized = await this.initializeSecurity();
+
+    if (!securityInitialized) {
+      console.warn('安全初始化未完成，扩展功能受限');
+      showErrorMessage('请先完成安全设置');
+      return;
+    }
+
+    this.setupTabNavigation();
     this.setupEventListeners();
     this.loadEnvironments();
-    // 初始化网站列表显示状态
-    const envListContainer = document.getElementById('envListContainer');
-    const envList = document.getElementById('envList');
-    const toggleBtn = document.getElementById('toggleEnvList');
-    
-    if (envListContainer) {
-      envListContainer.style.display = 'block'; // 始终显示容器（包含 header）
-    }
-    if (envList) {
-      envList.style.display = this.envListExpanded ? 'flex' : 'none'; // 只控制列表内容
-    }
-    if (toggleBtn) {
-      toggleBtn.textContent = this.envListExpanded ? '收起' : '展开';
+  }
+
+  /**
+   * Tab 导航切换
+   */
+  setupTabNavigation() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+        this.switchTab(tabName);
+      });
+    });
+  }
+
+  switchTab(tabName) {
+    this.currentTab = tabName;
+
+    // 更新 Tab 按钮状态
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // 更新 Tab 内容
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+      pane.classList.toggle('active', pane.id === `tab-${tabName}`);
+    });
+
+    // 切换到网站页面时刷新网站列表
+    if (tabName === 'sites') {
+      this.renderEnvironmentList();
     }
   }
   
@@ -250,12 +173,11 @@ class AccountManager {
       this.openEnvModal();
     });
     
-    // 切换网站列表显示
-    const toggleEnvList = document.getElementById('toggleEnvList');
-    toggleEnvList?.addEventListener('click', () => {
-      this.toggleEnvList();
+    // 设置页面 - 修改主密码
+    document.getElementById('changeMasterPasswordBtn')?.addEventListener('click', () => {
+      this.promptMasterPasswordVerification();
     });
-    
+
     // 添加账号按钮
     const addAccountBtn = document.getElementById('addAccountBtn');
     addAccountBtn?.addEventListener('click', () => {
@@ -355,131 +277,96 @@ class AccountManager {
       const result = await chrome.storage.local.get('environments');
       const environments = result.environments || [];
       const envSelect = document.getElementById('envSelect');
-      
+
       if (!envSelect) return;
-      
+
       // 清空现有选项（保留默认选项）
       while (envSelect.children.length > 1) {
         envSelect.removeChild(envSelect.lastChild);
       }
-      
+
       environments.forEach(env => {
         const option = document.createElement('option');
         option.value = env.id;
         option.textContent = env.name || '未命名网站';
         envSelect.appendChild(option);
       });
-      
-      // 更新网站列表显示
-      this.renderEnvList(environments);
+
+      // 如果当前在网站 Tab，刷新网站列表
+      if (this.currentTab === 'sites') {
+        this.renderEnvironmentList();
+      }
     } catch (error) {
       console.error('加载网站失败:', error);
     }
   }
   
-  renderEnvList(environments) {
+  /**
+   * 渲染"网站"Tab 中的网站列表
+   */
+  renderEnvironmentList() {
     const envList = document.getElementById('envList');
-    const envListContainer = document.getElementById('envListContainer');
-    
-    if (!envList || !envListContainer) return;
-    
-    if (environments.length === 0) {
-      envList.innerHTML = `
-        <div class="empty-state" style="padding: 16px;">
-          <div class="empty-state-icon" style="font-size: 32px;">🏢</div>
-          <p class="empty-state-description" style="margin: 0; font-size: 12px;">暂无网站，点击 "+" 添加</p>
-        </div>
-      `;
-      return;
-    }
-    
-    envList.innerHTML = '';
-    environments.forEach(env => {
-      const envItem = this.createEnvItem(env);
-      envList.appendChild(envItem);
-    });
-  }
-  
-  createEnvItem(env) {
-    const item = document.createElement('div');
-    item.className = 'env-item';
-    item.dataset.envId = env.id;
-    if (env.id === this.currentEnvId) {
-      item.classList.add('active');
-    }
-    
-    const envInfo = document.createElement('div');
-    envInfo.className = 'env-info';
-    
-    const envName = document.createElement('div');
-    envName.className = 'env-name';
-    safeSetTextContent(envName, env.name || '未命名网站');
-    
-    const envLoginUrl = document.createElement('div');
-    envLoginUrl.className = 'env-domain';
-    safeSetTextContent(envLoginUrl, env.loginUrl || '');
-    
-    envInfo.appendChild(envName);
-    envInfo.appendChild(envLoginUrl);
-    
-    const envActions = document.createElement('div');
-    envActions.className = 'env-actions';
-    
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn-env-edit';
-    editBtn.textContent = '编辑';
-    editBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.openEnvModal(env.id);
-    });
-    
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-env-delete';
-    deleteBtn.textContent = '删除';
-    deleteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.handleDeleteEnv(env.id);
-    });
-    
-    // 点击网站项切换网站
-    item.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'BUTTON') {
-        this.switchEnvironment(env.id);
-        const envSelect = document.getElementById('envSelect');
-        if (envSelect) {
-          envSelect.value = env.id;
-        }
+    if (!envList) return;
+
+    chrome.storage.local.get('environments', (result) => {
+      const environments = result.environments || [];
+      envList.innerHTML = '';
+
+      if (environments.length === 0) {
+        envList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🌐</div>
+            <div>还没有添加网站</div>
+          </div>`;
+        return;
       }
+
+      environments.forEach(env => {
+        const item = document.createElement('div');
+        item.className = `env-item${env.id === this.currentEnvId ? ' active' : ''}`;
+
+        const info = createElement('div', { className: 'env-info' });
+        const nameEl = createElement('div', { className: 'env-name' });
+        safeSetTextContent(nameEl, env.name);
+        const domainEl = createElement('div', { className: 'env-domain' });
+        safeSetTextContent(domainEl, env.loginUrl || '');
+        info.appendChild(nameEl);
+        info.appendChild(domainEl);
+
+        const actions = document.createElement('div');
+        actions.className = 'env-actions';
+        actions.innerHTML = `
+          <button class="btn-edit" title="编辑">✏️</button>
+          <button class="btn-delete" title="删除">🗑️</button>`;
+
+        item.appendChild(info);
+        item.appendChild(actions);
+
+        // 点击选择网站并切换到账号 Tab
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('.env-actions')) return;
+          this.switchEnvironment(env.id);
+          this.switchTab('accounts');
+          // 更新下拉框
+          const envSelect = document.getElementById('envSelect');
+          if (envSelect) envSelect.value = env.id;
+        });
+
+        // 编辑按钮
+        item.querySelector('.btn-edit').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openEnvModal(env.id);
+        });
+
+        // 删除按钮
+        item.querySelector('.btn-delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.handleDeleteEnv(env.id);
+        });
+
+        envList.appendChild(item);
+      });
     });
-    
-    envActions.appendChild(editBtn);
-    envActions.appendChild(deleteBtn);
-    
-    item.appendChild(envInfo);
-    item.appendChild(envActions);
-    
-    return item;
-  }
-  
-  toggleEnvList() {
-    const envListContainer = document.getElementById('envListContainer');
-    const envList = document.getElementById('envList');
-    const toggleBtn = document.getElementById('toggleEnvList');
-    
-    if (!envListContainer || !envList || !toggleBtn) return;
-    
-    this.envListExpanded = !this.envListExpanded;
-    
-    if (this.envListExpanded) {
-      // 展开：显示列表内容
-      envListContainer.style.display = 'block';
-      envList.style.display = 'flex';
-      toggleBtn.textContent = '收起';
-    } else {
-      // 收起：只隐藏列表内容，保留 header 可见
-      envList.style.display = 'none';
-      toggleBtn.textContent = '展开';
-    }
   }
   
   switchEnvironment(envId) {
@@ -661,12 +548,19 @@ class AccountManager {
       e.stopPropagation();
       // 解密密码
       let decryptedPassword = account.password;
-      if (window.cryptoUtils && account.password) {
+      if (cryptoUtils && account.password) {
         try {
-          decryptedPassword = await window.cryptoUtils.decryptPassword(account.password);
+          // 确保会话密钥存在
+          const sessionKey = await this.ensureSessionKey();
+          if (!sessionKey) {
+            showErrorMessage('无法获取会话密钥');
+            return;
+          }
+          decryptedPassword = await cryptoUtils.decryptPassword(account.password, sessionKey);
         } catch (error) {
-          console.warn('密码解密失败，使用原密码:', error);
-          decryptedPassword = account.password;
+          console.error('密码解密失败:', error);
+          showErrorMessage('密码解密失败：' + error.message);
+          return;
         }
       }
       this.copyToClipboard(decryptedPassword || '', '密码已复制');
@@ -831,16 +725,22 @@ class AccountManager {
       
       // 解密密码（如果已加密）
       let decryptedPassword = account.password;
-      if (window.cryptoUtils && account.password) {
+      if (cryptoUtils && account.password) {
         try {
-          decryptedPassword = await window.cryptoUtils.decryptPassword(account.password);
+          // 确保会话密钥存在
+          const sessionKey = await this.ensureSessionKey();
+          if (!sessionKey) {
+            showErrorMessage('无法获取会话密钥');
+            return;
+          }
+          decryptedPassword = await cryptoUtils.decryptPassword(account.password, sessionKey);
         } catch (error) {
-          console.warn('密码解密失败，使用原密码:', error);
-          // 如果解密失败，使用原密码（可能是未加密的）
-          decryptedPassword = account.password;
+          console.error('密码解密失败:', error);
+          showErrorMessage('密码解密失败：' + error.message);
+          return;
         }
       }
-      
+
       // 创建账号副本，使用解密后的密码
       const accountWithDecryptedPassword = {
         ...account,
@@ -1057,29 +957,39 @@ class AccountManager {
     
     if (accountId) {
       // 编辑模式：加载账号数据
-      chrome.storage.local.get('accounts', async (result) => {
+      (async () => {
+        const result = await chrome.storage.local.get('accounts');
         const accounts = result.accounts || [];
         const account = accounts.find(a => a.id === accountId);
         if (account) {
           document.getElementById('accountUsername').value = account.username || '';
           document.getElementById('accountAccount').value = account.account || '';
-          
+
           // 解密密码用于编辑（如果已加密）
           let decryptedPassword = account.password;
-          if (window.cryptoUtils && account.password) {
+          if (cryptoUtils && account.password) {
             try {
-              decryptedPassword = await window.cryptoUtils.decryptPassword(account.password);
+              // 确保会话密钥存在
+              const sessionKey = await this.ensureSessionKey();
+              if (!sessionKey) {
+                showErrorMessage('无法获取会话密钥');
+                this.accountModal.close();
+                return;
+              }
+              decryptedPassword = await cryptoUtils.decryptPassword(account.password, sessionKey);
             } catch (error) {
-              console.warn('密码解密失败，使用原密码:', error);
-              decryptedPassword = account.password;
+              console.error('密码解密失败:', error);
+              showErrorMessage('密码解密失败：' + error.message);
+              this.accountModal.close();
+              return;
             }
           }
-          
+
           document.getElementById('accountPassword').value = decryptedPassword || '';
           document.getElementById('accountNote').value = account.note || '';
           this.currentAccountId = accountId;
         }
-      });
+      })();
     } else {
       // 添加模式：确保表单是空的
       this.currentAccountId = null;
@@ -1088,7 +998,7 @@ class AccountManager {
       document.getElementById('accountPassword').value = '';
       document.getElementById('accountNote').value = '';
     }
-    
+
     this.accountModal.open();
   }
   
@@ -1271,16 +1181,23 @@ class AccountManager {
     }
     
     try {
-      // 加密密码（如果cryptoUtils可用）
-      let encryptedPassword = password;
-      if (window.cryptoUtils) {
-        try {
-          encryptedPassword = await window.cryptoUtils.encryptPassword(password);
-        } catch (error) {
-          console.warn('密码加密失败，使用明文存储:', error);
-          // 如果加密失败，使用明文（向后兼容）
-          encryptedPassword = password;
-        }
+      // 获取会话密钥（从 SecurityManager）
+      const sessionKey = await securityManager.getSessionKey();
+      if (!sessionKey) {
+        showErrorMessage('会话已过期，请重新验证主密码');
+        // 可以在这里触发主密码验证流程
+        await this.promptMasterPasswordVerification();
+        return;
+      }
+
+      // 加密密码（不再降级为明文，加密失败将抛出异常）
+      let encryptedPassword;
+      try {
+        encryptedPassword = await cryptoUtils.encryptPassword(password, sessionKey);
+      } catch (error) {
+        console.error('密码加密失败:', error);
+        showErrorMessage('密码加密失败：' + error.message);
+        return; // 不保存账号
       }
       
       const result = await chrome.storage.local.get('accounts');
@@ -1373,21 +1290,48 @@ class AccountManager {
   // 导出数据为JSON文件
   async exportData() {
     try {
+      // 显示安全警告
+      const confirmed = confirm(
+        '⚠️ 导出数据安全提示\n\n' +
+        '导出的文件包含加密的账号密码数据。请注意：\n\n' +
+        '1. 请妥善保管此文件，不要分享给他人\n' +
+        '2. 不要通过不安全的渠道传输（如邮件、即时消息）\n' +
+        '3. 建议将文件存储在加密的位置（如加密磁盘）\n' +
+        '4. 使用后请及时删除\n\n' +
+        '确定要导出吗？'
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
       const result = await chrome.storage.local.get(['environments', 'accounts']);
       const environments = result.environments || [];
       const accounts = result.accounts || [];
-      
+
+      // 验证所有密码是否已加密
+      for (const account of accounts) {
+        if (!cryptoUtils.isBase64(account.password)) {
+          showErrorMessage(
+            `账号 "${account.username}" 的密码未加密，无法导出。` +
+            '请先设置主密码并重新保存所有账号。'
+          );
+          return;
+        }
+      }
+
       // 构建导出数据
       const exportData = {
-        version: '1.0.0',
+        version: '2.0',
         exportTime: new Date().toISOString(),
+        securityNotice: '此文件包含加密数据，请妥善保管',
         environments: environments,
         accounts: accounts
       };
-      
+
       // 转换为JSON字符串（格式化）
       const jsonString = JSON.stringify(exportData, null, 2);
-      
+
       // 创建Blob并下载
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -1398,11 +1342,11 @@ class AccountManager {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       showSuccessMessage('配置导出成功');
     } catch (error) {
       console.error('导出失败:', error);
-      alert('导出失败: ' + error.message);
+      showErrorMessage('导出失败: ' + error.message);
     }
   }
   
@@ -1566,6 +1510,204 @@ class AccountManager {
     } catch (error) {
       console.error('合并数据失败:', error);
       throw error;
+    }
+  }
+
+  // ========== 安全功能（v2.0新增） ==========
+
+  /**
+   * 初始化安全配置
+   * 在 init() 中调用，确保用户已设置主密码
+   * @returns {Promise<boolean>} 初始化是否成功
+   */
+  async initializeSecurity() {
+    try {
+      // 1. 检查是否需要从旧版本迁移
+      const needsMigration = await securityManager.needsMigration();
+      if (needsMigration) {
+        await this.promptDataMigration();
+        // 迁移完成后，检查会话是否建立
+        const sessionKey = await securityManager.getSessionKey();
+        return !!sessionKey;
+      }
+
+      // 2. 检查是否已设置主密码
+      const hasSecurityConfig = await securityManager.hasSecurityConfig();
+      if (!hasSecurityConfig) {
+        // 首次使用，显示主密码设置向导
+        await this.promptMasterPasswordSetup();
+        // 设置完成后，检查会话是否建立
+        const sessionKey = await securityManager.getSessionKey();
+        return !!sessionKey;
+      }
+
+      // 3. 检查会话是否有效
+      let sessionKey = await securityManager.getSessionKey();
+      if (!sessionKey) {
+        // 会话过期，要求验证主密码
+        await this.promptMasterPasswordVerification();
+        // 验证完成后，再次检查会话
+        sessionKey = await securityManager.getSessionKey();
+      }
+
+      return !!sessionKey;
+    } catch (error) {
+      console.error('安全初始化失败:', error);
+      showErrorMessage('安全初始化失败：' + error.message);
+      return false;
+    }
+  }
+
+  /**
+   * 首次设置主密码（模态框，不可关闭）
+   */
+  async promptMasterPasswordSetup() {
+    const password = prompt(
+      '🔒 欢迎使用账号管理器 v2.0\n\n' +
+      '为了保护您的账号安全，请设置主密码。\n\n' +
+      '主密码要求：\n' +
+      '• 至少 8 位字符\n' +
+      '• 包含大写字母、小写字母和数字\n\n' +
+      '请输入主密码：'
+    );
+
+    if (!password) {
+      alert('必须设置主密码才能使用扩展');
+      await this.promptMasterPasswordSetup(); // 递归，直到设置成功
+      return;
+    }
+
+    // 验证密码强度
+    const validation = securityManager.validatePasswordStrength(password);
+    if (!validation.valid) {
+      alert('密码强度不符合要求：\n' + validation.message);
+      await this.promptMasterPasswordSetup();
+      return;
+    }
+
+    // 二次确认
+    const confirmPassword = prompt('请再次输入主密码以确认：');
+    if (password !== confirmPassword) {
+      alert('两次输入的密码不一致，请重新设置');
+      await this.promptMasterPasswordSetup();
+      return;
+    }
+
+    // 初始化主密码
+    const result = await securityManager.initializeMasterPassword(password);
+    if (result.success) {
+      showSuccessMessage('主密码设置成功！');
+    } else {
+      alert('设置失败：' + result.message);
+      await this.promptMasterPasswordSetup();
+    }
+  }
+
+  /**
+   * 验证主密码（会话过期时）
+   */
+  async promptMasterPasswordVerification() {
+    const password = prompt(
+      '🔐 会话已过期\n\n' +
+      '请输入主密码以继续：'
+    );
+
+    if (!password) {
+      alert('必须验证主密码才能继续使用');
+      await this.promptMasterPasswordVerification();
+      return;
+    }
+
+    const result = await securityManager.verifyMasterPassword(password);
+    if (result.success) {
+      showSuccessMessage('验证成功！');
+    } else {
+      alert('主密码错误：' + result.message);
+      await this.promptMasterPasswordVerification();
+    }
+  }
+
+  /**
+   * 确保会话密钥存在（如果不存在则提示验证主密码）
+   * @returns {Promise<string|null>} 会话密钥
+   */
+  async ensureSessionKey() {
+    let sessionKey = await securityManager.getSessionKey();
+
+    if (!sessionKey) {
+      // 会话过期，要求验证主密码
+      await this.promptMasterPasswordVerification();
+
+      // 重新获取会话密钥
+      sessionKey = await securityManager.getSessionKey();
+    }
+
+    return sessionKey;
+  }
+
+  /**
+   * 数据迁移向导（从旧版本）
+   */
+  async promptDataMigration() {
+    const confirmed = confirm(
+      '🔄 检测到旧版本数据\n\n' +
+      '您的数据需要迁移到新的安全系统。\n' +
+      '迁移过程：\n' +
+      '1. 输入旧主密码\n' +
+      '2. 设置新主密码\n' +
+      '3. 自动重新加密所有密码\n\n' +
+      '注意：旧数据已自动备份\n\n' +
+      '现在开始迁移吗？'
+    );
+
+    if (!confirmed) {
+      alert('必须完成数据迁移才能使用新版本');
+      await this.promptDataMigration();
+      return;
+    }
+
+    // 1. 输入旧主密码
+    const oldPassword = prompt('请输入旧主密码：');
+    if (!oldPassword) {
+      await this.promptDataMigration();
+      return;
+    }
+
+    // 2. 设置新主密码
+    const newPassword = prompt(
+      '请设置新主密码：\n\n' +
+      '要求：至少 8 位，包含大小写字母和数字'
+    );
+    if (!newPassword) {
+      await this.promptDataMigration();
+      return;
+    }
+
+    const validation = securityManager.validatePasswordStrength(newPassword);
+    if (!validation.valid) {
+      alert('密码强度不符合要求：\n' + validation.message);
+      await this.promptDataMigration();
+      return;
+    }
+
+    const confirmPassword = prompt('请再次输入新主密码：');
+    if (newPassword !== confirmPassword) {
+      alert('两次输入的密码不一致');
+      await this.promptDataMigration();
+      return;
+    }
+
+    // 3. 执行迁移
+    showInfoMessage('正在迁移数据，请稍候...');
+    const result = await securityManager.migrateFromOldVersion(oldPassword, newPassword);
+
+    if (result.success) {
+      showSuccessMessage('数据迁移成功！');
+      // 重新加载数据
+      await this.loadEnvironments();
+    } else {
+      alert('迁移失败：' + result.message);
+      await this.promptDataMigration();
     }
   }
 }
