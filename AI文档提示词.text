@@ -1,6 +1,48 @@
-AI 生成 账号管理器导入json文件
+你是一个 JSON 数据生成助手。请根据我提供的网站和账号信息，生成符合「账号管理器」扩展导入格式的 JSON 文件。
 
-网站列表如下【示例】：网站id 和 账号id 请按照下方列表自增，可以参考给出的json示例
+## 规则
+1. 严格按照下方 JSON 格式输出，不要添加任何多余解释
+2. `environments[].id` 格式为 `env_001`、`env_002`，按顺序自增
+3. `accounts[].id` 格式为 `acc_001`、`acc_002`，按顺序自增
+4. `accounts[].envId` 必须与对应网站的 `environments[].id` 匹配
+5. `password` 字段填写明文密码（导入后扩展会自动加密）
+6. `loginButtonId` 和 `loginButtonClass` 如果不知道可以留空字符串 ""
+7. 时间戳统一使用当前时间的毫秒值
+8. `version` 固定为 "2.0.0"
+
+## JSON 格式模板
+
+```json
+{
+  "version": "2.0.0",
+  "exportTime": "当前时间ISO格式",
+  "environments": [
+    {
+      "id": "env_001",
+      "name": "网站名称",
+      "loginUrl": "登录页面地址",
+      "loginButtonId": "",
+      "loginButtonClass": "",
+      "createdAt": 当前时间戳,
+      "updatedAt": 当前时间戳
+    }
+  ],
+  "accounts": [
+    {
+      "id": "acc_001",
+      "envId": "env_001",
+      "username": "显示名称/用户名",
+      "account": "登录账号（邮箱/手机号等）",
+      "password": "明文密码",
+      "note": "备注信息",
+      "createdAt": 当前时间戳,
+      "updatedAt": 当前时间戳
+    }
+  ]
+}
+```
+
+## 以下是我的网站和账号信息，请生成 JSON：
 
 网站列表：
 1、test1
@@ -11,37 +53,5 @@ AI 生成 账号管理器导入json文件
 
 账号列表：
 
-Test1
-
-example_user（用户名）  example@example.com（账号）  example_password（密码）    test1网站【示例公司】（备注） 
-
-
-示例json【缺省值默认即可】：
-
-{
-  "version": "1.1.0",
-  "exportTime": "2024-01-01T00:00:00.000Z",
-  "environments": [
-    {
-      "id": "env_001",
-      "name": "开发网站",
-      "loginUrl": "https://dev.example.com/login",
-      "loginButtonId": "ch_login_btn",
-      "loginButtonClass": "formBtn",
-      "createdAt": 1704067200000,
-      "updatedAt": 1704067200000
-    }
-  ],
-  "accounts": [
-    {
-      "id": "acc_001",
-      "envId": "env_001",
-      "username": "开发账号1",
-      "account": "dev_user1@example.com",
-      "password": "encrypted_password",
-      "note": "开发网站测试账号",
-      "createdAt": 1704067200000,
-      "updatedAt": 1704067200000
-    }
-  ]
-}
+【test1】
+example_user（用户名）  example@example.com（账号）  example_password（密码）  示例公司（备注）
