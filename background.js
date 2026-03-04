@@ -13,6 +13,21 @@ let sessionMode = 'default'; // 'default'(30min) | 'today' | 'browser'
 // 会话超时 Alarm 名称
 const SESSION_ALARM = 'sessionTimeout';
 
+// 刷新会话超时（每次活动时重置计时器，实现"空闲超时"）
+async function refreshSessionTimeout() {
+  if (sessionMode === 'default') {
+    const config = await chrome.storage.local.get('sessionTimeout');
+    const timeoutMinutes = config.sessionTimeout || 30;
+    await chrome.alarms.clear(SESSION_ALARM);
+    await chrome.alarms.create(SESSION_ALARM, { delayInMinutes: timeoutMinutes });
+    // 同步更新 session storage 中的创建时间
+    try {
+      await chrome.storage.session.set({ sessionCreatedAt: Date.now() });
+    } catch (e) { /* ignore */ }
+  }
+  // 'today' 和 'browser' 模式不需要刷新
+}
+
 // 初始化默认数据
 const initializeDefaultData = async () => {
   try {
@@ -179,6 +194,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'getSessionKey') {
         // 先检查内存
         if (sessionKey) {
+          // 每次访问刷新超时，变为"空闲超时"而非"固定超时"
+          await refreshSessionTimeout();
           sendResponse({ success: true, keyData: sessionKey });
           return;
         }
@@ -208,6 +225,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (!expired) {
               sessionKey = data.sessionKey;
               sessionMode = mode;
+              // 恢复后也刷新超时
+              await refreshSessionTimeout();
               sendResponse({ success: true, keyData: sessionKey });
               return;
             } else {
