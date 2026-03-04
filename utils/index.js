@@ -25,7 +25,6 @@ export {
 
 // 验证工具
 export {
-  validateMasterPassword,
   validateEnvironment,
   validateAccount,
   validateEmail,

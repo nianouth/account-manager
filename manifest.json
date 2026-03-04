@@ -34,6 +34,7 @@
       ],
       "js": [
         "crypto-utils.js",
+        "content-utils.js",
         "content.js"
       ],
       "css": [

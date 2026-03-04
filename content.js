@@ -2,112 +2,9 @@
  * 账号管理器 - 内容脚本
  * 符合 Chrome Extension Manifest V3 规范
  * 修复XSS风险，改进DOM操作，添加拖拽功能
+ *
+ * 依赖：content-utils.js（safeSetTextContent, createElement, showSuccessMessage, matchEnvironment）
  */
-
-// 工具函数：安全的文本内容设置（防止XSS）
-const safeSetTextContent = (element, text) => {
-  if (element && text !== null && text !== undefined) {
-    element.textContent = String(text);
-  }
-};
-
-// 工具函数：创建元素（避免使用innerHTML）
-const createElement = (tag, attributes = {}, children = []) => {
-  const element = document.createElement(tag);
-  
-  Object.entries(attributes).forEach(([key, value]) => {
-    if (key === 'style' && typeof value === 'object') {
-      Object.assign(element.style, value);
-    } else if (key === 'class') {
-      element.className = value;
-    } else if (key.startsWith('data-')) {
-      element.setAttribute(key, value);
-    } else {
-      element[key] = value;
-    }
-  });
-  
-  children.forEach(child => {
-    if (typeof child === 'string') {
-      element.appendChild(document.createTextNode(child));
-    } else if (child instanceof Node) {
-      element.appendChild(child);
-    }
-  });
-  
-  return element;
-};
-
-// 工具函数：显示成功提示
-const showSuccessMessage = (message, duration = 2000) => {
-  // 移除已存在的提示
-  const existingToast = document.getElementById('floating-success-toast');
-  if (existingToast) {
-    existingToast.remove();
-  }
-  
-  const toast = createElement('div', {
-    id: 'floating-success-toast',
-    style: {
-      position: 'fixed',
-      top: '20px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      backgroundColor: '#518EFF',
-      color: 'white',
-      padding: '12px 24px',
-      borderRadius: '6px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      zIndex: '1000001',
-      fontSize: '14px',
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      whiteSpace: 'nowrap'
-    }
-  }, [message]);
-  
-  // 添加动画
-  toast.style.animation = 'slideDown 0.3s ease-out';
-  
-  // 确保动画样式存在
-  if (!document.getElementById('floating-toast-animations')) {
-    const style = createElement('style', {
-      id: 'floating-toast-animations'
-    });
-    style.textContent = `
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-        }
-      }
-      @keyframes slideUp {
-        from {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-        }
-        to {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-20px);
-        }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-  
-  document.body.appendChild(toast);
-  
-  // 自动移除
-  setTimeout(() => {
-    toast.style.animation = 'slideUp 0.3s ease-out';
-    setTimeout(() => {
-      toast.remove();
-    }, 300);
-  }, duration);
-};
 
 // 拖拽功能（纯 GPU 合成：translate3d + pointer events）
 class PanelDragger {
@@ -247,7 +144,6 @@ class FloatingPanel {
     this.currentEnvId = null;
     this.isCollapsed = false;
     this.lastCheckedUrl = null;
-    this.urlCheckInterval = null;
     this.init();
   }
   
@@ -283,35 +179,31 @@ class FloatingPanel {
   setupUrlChangeListener() {
     // 记录初始URL
     this.lastCheckedUrl = window.location.href;
-    
+
     // 监听popstate事件（浏览器前进/后退）
     window.addEventListener('popstate', () => {
       this.checkDomainMatch();
     });
-    
+
+    // 监听hashchange事件（hash路由变化）
+    window.addEventListener('hashchange', () => {
+      this.checkDomainMatch();
+    });
+
     // 监听pushstate和replacestate（SPA路由变化）
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
-    
+
     const self = this;
     history.pushState = function(...args) {
       originalPushState.apply(history, args);
       setTimeout(() => self.checkDomainMatch(), 100);
     };
-    
+
     history.replaceState = function(...args) {
       originalReplaceState.apply(history, args);
       setTimeout(() => self.checkDomainMatch(), 100);
     };
-    
-    // 定期检查URL变化（作为备用方案，处理其他可能的URL变化）
-    this.urlCheckInterval = setInterval(() => {
-      const currentUrl = window.location.href;
-      if (currentUrl !== this.lastCheckedUrl) {
-        this.lastCheckedUrl = currentUrl;
-        this.checkDomainMatch();
-      }
-    }, 1000);
   }
   
   async checkDomainMatch() {
@@ -368,11 +260,11 @@ class FloatingPanel {
         position: 'fixed',
         top: '10px',
         right: '10px',
-        width: '300px',
+        width: PANEL.WIDTH,
         backgroundColor: 'white',
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        zIndex: '999999',
+        zIndex: PANEL.Z_INDEX,
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         display: 'flex',
         flexDirection: 'column'
@@ -436,7 +328,7 @@ class FloatingPanel {
       style: {
         width: '100%',
         padding: '8px',
-        backgroundColor: '#518EFF',
+        backgroundColor: COLORS.PRIMARY,
         color: 'white',
         border: 'none',
         borderRadius: '4px',
@@ -472,7 +364,7 @@ class FloatingPanel {
   
   showAddAccountForm() {
     if (!this.currentEnvId) {
-      alert('请先选择网站');
+      showErrorMessage('请先选择网站');
       return;
     }
     
@@ -493,7 +385,7 @@ class FloatingPanel {
         width: '100%',
         height: '100%',
         backgroundColor: 'rgba(0,0,0,0.6)',
-        zIndex: '1000000',
+        zIndex: PANEL.MODAL_Z_INDEX,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -777,7 +669,7 @@ class FloatingPanel {
         borderRadius: '6px',
         cursor: 'pointer',
         fontSize: '14px',
-        backgroundColor: '#518EFF',
+        backgroundColor: COLORS.PRIMARY,
         color: 'white'
       }
     }, ['保存']);
@@ -817,25 +709,28 @@ class FloatingPanel {
     const note = document.getElementById('floating-note')?.value.trim() || '';
     
     if (!username || !account || !password) {
-      alert('请填写所有必填字段');
+      showErrorMessage('请填写所有必填字段');
       return;
     }
-    
+
     if (!this.currentEnvId) {
-      alert('网站ID无效');
+      showErrorMessage('网站ID无效');
       return;
     }
-    
+
     try {
-      // 加密密码（如果可用）
-      let encryptedPassword = password;
-      if (window.cryptoUtils) {
-        try {
-          encryptedPassword = await window.cryptoUtils.encryptPassword(password);
-        } catch (error) {
-          console.warn('密码加密失败，使用明文存储:', error);
-          encryptedPassword = password;
-        }
+      // 加密密码
+      let encryptedPassword;
+      if (!window.cryptoUtils) {
+        showErrorMessage('加密模块未加载，无法安全保存密码');
+        return;
+      }
+      try {
+        encryptedPassword = await window.cryptoUtils.encryptPassword(password);
+      } catch (error) {
+        console.error('密码加密失败:', error);
+        showErrorMessage('密码加密失败：' + error.message);
+        return;
       }
       
       const result = await chrome.storage.local.get('accounts');
@@ -870,7 +765,7 @@ class FloatingPanel {
       console.log('账号添加成功:', newAccount);
     } catch (error) {
       console.error('保存账号失败:', error);
-      alert('保存失败: ' + error.message);
+      showErrorMessage('保存失败: ' + error.message);
     }
   }
   
@@ -896,13 +791,13 @@ class FloatingPanel {
     }
   }
   
-  switchEnvironment(envId) {
+  async switchEnvironment(envId) {
     this.currentEnvId = envId;
     const envSelect = document.getElementById('env-select');
     if (envSelect) {
       envSelect.value = envId;
     }
-    this.loadAccounts(envId);
+    await this.loadAccounts(envId);
   }
   
   async loadAccounts(envId) {
@@ -1017,7 +912,7 @@ class FloatingPanel {
       'data-account-id': account.id,
       style: {
         padding: '4px 12px',
-        backgroundColor: '#518EFF',
+        backgroundColor: COLORS.PRIMARY,
         color: 'white',
         border: 'none',
         borderRadius: '4px',
@@ -1052,7 +947,7 @@ class FloatingPanel {
       // 智能查找登录表单
       const loginForm = this.findLoginForm();
       if (!loginForm) {
-        alert('未找到登录表单，请确保当前页面包含登录表单');
+        showErrorMessage('未找到登录表单，请确保当前页面包含登录表单');
         return;
       }
       
@@ -1070,7 +965,7 @@ class FloatingPanel {
       this.submitLoginForm(loginForm, loginButtonId, loginButtonClass);
     } catch (error) {
       console.error('登录失败:', error);
-      alert('登录失败: ' + error.message);
+      showErrorMessage('登录失败: ' + error.message);
     }
   }
   
@@ -1205,8 +1100,8 @@ class FloatingPanel {
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     
-    this.panel.style.width = '50px';
-    this.panel.style.height = '50px';
+    this.panel.style.width = PANEL.CIRCLE_SIZE;
+    this.panel.style.height = PANEL.CIRCLE_SIZE;
     this.panel.style.borderRadius = '50%';
     this.panel.style.left = `${centerX - 25}px`;
     this.panel.style.top = `${centerY - 25}px`;
@@ -1237,7 +1132,7 @@ class FloatingPanel {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #A0C3FF 0%, #518EFF 100%)',
+          background: 'linear-gradient(135deg, ' + COLORS.PRIMARY_LIGHT + ' 0%, ' + COLORS.PRIMARY + ' 100%)',
           borderRadius: '50%',
           cursor: 'pointer',
           color: 'white',
@@ -1277,7 +1172,7 @@ class FloatingPanel {
     this.panel.classList.remove('collapsed');
     
     // 恢复原始样式
-    this.panel.style.width = '300px';
+    this.panel.style.width = PANEL.WIDTH;
     this.panel.style.height = 'auto';
     this.panel.style.borderRadius = '8px';
     this.panel.style.transition = 'all 0.5s ease-in-out';
@@ -1304,62 +1199,6 @@ class FloatingPanel {
     }
   }
 }
-
-// 匹配网站（根据登录页面URL）
-const matchEnvironment = async (currentUrl) => {
-  if (!currentUrl) return null;
-  
-  try {
-    const result = await chrome.storage.local.get('environments');
-    const environments = result.environments || [];
-    
-    // 规范化当前URL（移除末尾的斜杠、查询参数、hash等，只保留协议+域名+路径）
-    let normalizedCurrentUrl = currentUrl;
-    try {
-      const url = new URL(currentUrl);
-      normalizedCurrentUrl = `${url.protocol}//${url.host}${url.pathname}`.replace(/\/$/, '');
-    } catch (error) {
-      console.debug('URL规范化失败，使用原始URL:', error);
-    }
-    
-    // 遍历所有网站，检查当前URL是否匹配登录页面URL
-    for (const env of environments) {
-      if (!env.loginUrl) continue;
-      
-      try {
-        // 规范化网站的登录URL
-        const envUrl = new URL(env.loginUrl);
-        const normalizedEnvUrl = `${envUrl.protocol}//${envUrl.host}${envUrl.pathname}`.replace(/\/$/, '');
-        
-        // 精确匹配
-        if (normalizedCurrentUrl === normalizedEnvUrl) {
-          console.debug('URL精确匹配:', normalizedCurrentUrl, '===', normalizedEnvUrl);
-          return env;
-        }
-        
-        // 路径匹配（支持通配符，如 /login/*）
-        if (normalizedEnvUrl.endsWith('/*')) {
-          const baseUrl = normalizedEnvUrl.slice(0, -2);
-          if (normalizedCurrentUrl.startsWith(baseUrl)) {
-            console.debug('URL通配符匹配:', normalizedCurrentUrl, 'startsWith', baseUrl);
-            return env;
-          }
-        }
-        
-        // 不再使用包含匹配，因为太宽松会导致误匹配
-        // 例如：登录URL是 https://example.com，当前URL是 https://example.com/dashboard 也会匹配
-      } catch (error) {
-        console.debug('网站URL解析失败:', env.loginUrl, error);
-        continue;
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('网站匹配失败:', error);
-    return null;
-  }
-};
 
 // 初始化
 let floatingPanel = null;

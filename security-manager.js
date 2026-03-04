@@ -15,7 +15,7 @@ export class SecurityManager {
     this.VERIFICATION_TEXT = 'account-manager-security-v2';
 
     // PBKDF2 参数
-    this.PBKDF2_ITERATIONS = 120000; // 提高到 120000 次迭代（从 100000）
+    this.PBKDF2_ITERATIONS = 100000;
     this.SALT_LENGTH = 16; // 128 bits
 
     // 会话超时时间（毫秒）

@@ -4,28 +4,14 @@
  * v2.0.0: 添加会话管理、密钥存储、数据迁移
  */
 
+import { matchEnvironment as matchEnvByUrl } from './utils/url-matcher.js';
+
 // ============== 会话管理 ==============
 // Service Worker 内存中的会话密钥（浏览器关闭或 Service Worker 休眠后会清除）
 let sessionKey = null;
 let sessionMode = 'default'; // 'default'(30min) | 'today' | 'browser'
-let sessionTimeout = null;
-
-// 会话超时时间（30 分钟）
-const SESSION_DURATION = 30 * 60 * 1000; // 毫秒
-
 // 会话超时 Alarm 名称
 const SESSION_ALARM = 'sessionTimeout';
-
-// 工具函数：安全的存储操作
-const safeStorageOperation = (operation, errorHandler) => {
-  try {
-    return operation();
-  } catch (error) {
-    console.error('Storage operation failed:', error);
-    if (errorHandler) errorHandler(error);
-    return Promise.reject(error);
-  }
-};
 
 // 初始化默认数据
 const initializeDefaultData = async () => {
@@ -47,54 +33,13 @@ const initializeDefaultData = async () => {
   }
 };
 
-// 匹配网站（根据登录页面URL）
+// 匹配网站（根据登录页面URL，使用 utils/url-matcher.js 统一逻辑）
 const matchEnvironment = async (urlString) => {
   if (!urlString) return null;
-  
+
   try {
     const result = await chrome.storage.local.get('environments');
-    const environments = result.environments || [];
-    
-    // 规范化当前URL（移除末尾的斜杠、查询参数、hash等，只保留协议+域名+路径）
-    let normalizedCurrentUrl = urlString;
-    try {
-      const url = new URL(urlString);
-      normalizedCurrentUrl = `${url.protocol}//${url.host}${url.pathname}`.replace(/\/$/, '');
-    } catch (error) {
-      console.debug('URL规范化失败，使用原始URL:', error);
-    }
-    
-    // 遍历所有网站，检查当前URL是否匹配登录页面URL
-    for (const env of environments) {
-      if (!env.loginUrl) continue;
-      
-      try {
-        // 规范化网站的登录URL
-        const envUrl = new URL(env.loginUrl);
-        const normalizedEnvUrl = `${envUrl.protocol}//${envUrl.host}${envUrl.pathname}`.replace(/\/$/, '');
-        
-        // 精确匹配
-        if (normalizedCurrentUrl === normalizedEnvUrl) {
-          return env;
-        }
-        
-        // 路径匹配（支持通配符，如 /login/*）
-        if (normalizedEnvUrl.endsWith('/*')) {
-          const baseUrl = normalizedEnvUrl.slice(0, -2);
-          if (normalizedCurrentUrl.startsWith(baseUrl)) {
-            return env;
-          }
-        }
-        
-        // 不再使用包含匹配，因为太宽松会导致误匹配
-        // 例如：登录URL是 https://example.com，当前URL是 https://example.com/dashboard 也会匹配
-      } catch (error) {
-        console.debug('网站URL解析失败:', env.loginUrl, error);
-        continue;
-      }
-    }
-    
-    return null;
+    return matchEnvByUrl(urlString, result.environments || []);
   } catch (error) {
     console.error('网站匹配失败:', error);
     return null;
@@ -222,7 +167,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sessionCreatedAt: Date.now()
           });
         } catch (e) {
-          // chrome.storage.session 不可用时忽略
+          console.debug('chrome.storage.session 不可用:', e.message);
         }
 
         sendResponse({ success: true });
@@ -237,6 +182,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         // 内存没有（SW 重启过），从 session storage 恢复
+        // 注意：此处的过期检查是 Alarm 超时的安全兜底——SW 休眠可能导致 Alarm 未触发
         try {
           const data = await chrome.storage.session.get(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
           if (data.sessionKey) {
@@ -266,7 +212,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
           }
         } catch (e) {
-          // chrome.storage.session 不可用
+          console.debug('chrome.storage.session 不可用:', e.message);
         }
 
         sendResponse({ success: false, message: '会话已过期，请重新验证主密码' });
@@ -279,7 +225,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         await chrome.alarms.clear(SESSION_ALARM);
         try {
           await chrome.storage.session.remove(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
-        } catch (e) {}
+        } catch (e) {
+          console.debug('清除 session storage 失败:', e.message);
+        }
         sendResponse({ success: true });
         return;
       }
@@ -330,7 +278,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     sessionMode = 'default';
     try {
       await chrome.storage.session.remove(['sessionKey', 'sessionMode', 'sessionCreatedAt']);
-    } catch (e) {}
+    } catch (e) {
+      console.debug('清除 session storage 失败:', e.message);
+    }
   }
 });
 

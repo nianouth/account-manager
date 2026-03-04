@@ -4,32 +4,6 @@
  */
 
 /**
- * 验证主密码强度
- * @param {string} password - 待验证的密码
- * @returns {{valid: boolean, message: string}} 验证结果
- */
-export function validateMasterPassword(password) {
-  const minLength = 8;
-  const hasUpper = /[A-Z]/.test(password);
-  const hasLower = /[a-z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-
-  if (!password || typeof password !== 'string') {
-    return { valid: false, message: '密码不能为空' };
-  }
-
-  if (password.length < minLength) {
-    return { valid: false, message: `主密码至少需要 ${minLength} 位` };
-  }
-
-  if (!hasUpper || !hasLower || !hasNumber) {
-    return { valid: false, message: '主密码需包含大小写字母和数字' };
-  }
-
-  return { valid: true, message: '密码强度符合要求' };
-}
-
-/**
  * 验证网站信息
  * @param {Object} env - 网站对象
  * @returns {{valid: boolean, errors: Array}} 验证结果
