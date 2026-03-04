@@ -272,22 +272,6 @@ class AccountManager {
       });
     }
     
-    // 会话超时配置
-    const sessionTimeoutSelect = document.getElementById('sessionTimeoutSelect');
-    if (sessionTimeoutSelect) {
-      // 加载已保存的超时设置
-      chrome.storage.local.get('sessionTimeout', (result) => {
-        if (result.sessionTimeout) {
-          sessionTimeoutSelect.value = String(result.sessionTimeout);
-        }
-      });
-      sessionTimeoutSelect.addEventListener('change', (e) => {
-        const minutes = parseInt(e.target.value, 10);
-        chrome.storage.local.set({ sessionTimeout: minutes });
-        showSuccessMessage(`会话超时已设置为 ${e.target.selectedOptions[0].text}`);
-      });
-    }
-
     // 导出按钮
     const exportBtn = document.getElementById('exportBtn');
     exportBtn?.addEventListener('click', () => {
@@ -1834,10 +1818,12 @@ class AccountManager {
           }
 
           errorDiv.classList.remove('show');
-          const result = await securityManager.verifyMasterPassword(password, 'default');
+          const result = await securityManager.verifyMasterPassword(password);
 
           if (result.success) {
-            renderSessionStep(password);
+            overlay.remove();
+            showSuccessMessage('验证成功');
+            resolve();
           } else {
             errorDiv.textContent = '主密码错误';
             errorDiv.classList.add('show');
@@ -1857,41 +1843,6 @@ class AccountManager {
           if (e.key === 'Enter') { e.preventDefault(); doVerify(); }
         });
         setTimeout(() => document.getElementById('verifyPassword')?.focus(), 50);
-      };
-
-      // 步骤2：选择会话模式
-      const renderSessionStep = (password) => {
-        content.innerHTML = `
-          <div class="modal-header">
-            <h2>验证成功</h2>
-          </div>
-          <div class="dialog-body" style="padding-bottom:0;">
-            <p style="margin:0 0 4px;font-size:14px;color:var(--text-secondary);">选择会话保持方式：</p>
-            <div class="session-mode-buttons">
-              <button class="session-mode-btn" id="modeDefault">
-                <div class="mode-title">30 分钟</div>
-                <div class="mode-desc">30 分钟后再次验证</div>
-              </button>
-              <button class="session-mode-btn" id="modeToday">
-                <div class="mode-title">今日免验证</div>
-                <div class="mode-desc">今天内不再要求输入主密码</div>
-              </button>
-            </div>
-          </div>
-        `;
-
-        document.getElementById('modeDefault').addEventListener('click', async () => {
-          overlay.remove();
-          showSuccessMessage('验证成功');
-          resolve();
-        });
-
-        document.getElementById('modeToday').addEventListener('click', async () => {
-          await securityManager.verifyMasterPassword(password, 'today');
-          overlay.remove();
-          showSuccessMessage('已设置今日免验证');
-          resolve();
-        });
       };
 
       overlay.appendChild(content);
