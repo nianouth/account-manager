@@ -722,7 +722,7 @@ class FloatingPanel {
       // 获取会话密钥
       const sessionKey = await getSessionKey();
       if (!sessionKey) {
-        showErrorMessage('会话已过期，请在扩展弹窗中重新验证主密码');
+        showErrorMessage('会话已过期或连接失败，请点击扩展图标重新验证主密码');
         return;
       }
 
@@ -959,7 +959,7 @@ class FloatingPanel {
       // 获取会话密钥并解密密码
       const sessionKey = await getSessionKey();
       if (!sessionKey) {
-        showErrorMessage('会话已过期，请在扩展弹窗中重新验证主密码');
+        showErrorMessage('会话已过期或连接失败，请点击扩展图标重新验证主密码');
         return;
       }
 
