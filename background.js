@@ -148,8 +148,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         await chrome.alarms.clear(SESSION_ALARM);
 
         if (sessionMode === 'default') {
-          // 30分钟后清除
-          await chrome.alarms.create(SESSION_ALARM, { delayInMinutes: 30 });
+          // 从设置中读取超时时间，默认30分钟
+          const config = await chrome.storage.local.get('sessionTimeout');
+          const timeoutMinutes = config.sessionTimeout || 30;
+          await chrome.alarms.create(SESSION_ALARM, { delayInMinutes: timeoutMinutes });
         } else if (sessionMode === 'today') {
           // 计算到今天23:59:59的分钟数
           const now = new Date();
@@ -192,7 +194,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             const now = Date.now();
 
             let expired = false;
-            if (mode === 'default' && (now - createdAt) > 30 * 60 * 1000) {
+            const timeoutConfig = await chrome.storage.local.get('sessionTimeout');
+            const timeoutMs = (timeoutConfig.sessionTimeout || 30) * 60 * 1000;
+            if (mode === 'default' && (now - createdAt) > timeoutMs) {
               expired = true;
             } else if (mode === 'today') {
               const createdDate = new Date(createdAt).toDateString();

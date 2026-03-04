@@ -9,19 +9,19 @@
 const TOAST_COLORS = {
   success: {
     background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
-    icon: '✓'
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
   },
   error: {
-    background: 'linear-gradient(135deg, #F44336 0%, #EF5350 100%)',
-    icon: '✕'
+    background: 'linear-gradient(135deg, #FF3B30 0%, #FF6961 100%)',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
   },
   warning: {
-    background: 'linear-gradient(135deg, #FF9800 0%, #FFA726 100%)',
-    icon: '⚠'
+    background: 'linear-gradient(135deg, #FF9500 0%, #FFAC33 100%)',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
   },
   info: {
-    background: 'linear-gradient(135deg, #2196F3 0%, #42A5F5 100%)',
-    icon: 'ℹ'
+    background: 'linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%)',
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
   }
 };
 
@@ -103,10 +103,10 @@ export function showToast(message, type = 'success', duration = 2000) {
   // 添加图标
   const iconSpan = document.createElement('span');
   iconSpan.style.cssText = `
-    font-size: 16px;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
   `;
-  iconSpan.textContent = config.icon;
+  iconSpan.innerHTML = config.icon;
 
   // 添加消息文本
   const messageSpan = document.createElement('span');

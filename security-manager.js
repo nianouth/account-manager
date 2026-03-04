@@ -192,7 +192,7 @@ export class SecurityManager {
    * @param {string} masterPassword - 用户设置的主密码
    * @returns {Promise<{success: boolean, message: string}>} 初始化结果
    */
-  async initializeMasterPassword(masterPassword) {
+  async initializeMasterPassword(masterPassword, hint = '') {
     try {
       // 1. 验证密码强度
       const validation = this.validatePasswordStrength(masterPassword);
@@ -215,6 +215,7 @@ export class SecurityManager {
         salt: this.arrayBufferToBase64(salt.buffer),
         iterations: this.PBKDF2_ITERATIONS,
         verificationData: verificationData,
+        hint: hint,
         createdAt: Date.now()
       };
 
@@ -282,6 +283,15 @@ export class SecurityManager {
       console.error('验证主密码失败:', error);
       return { success: false, message: '验证失败：' + error.message };
     }
+  }
+
+  /**
+   * 获取主密码提示语
+   * @returns {Promise<string>} 密码提示（未设置时返回空字符串）
+   */
+  async getPasswordHint() {
+    const result = await chrome.storage.local.get('securityConfig');
+    return result.securityConfig?.hint || '';
   }
 
   /**
@@ -409,6 +419,92 @@ export class SecurityManager {
     } catch (error) {
       console.debug('获取会话密钥失败:', error);
       return null;
+    }
+  }
+
+  /**
+   * 修改主密码
+   * @param {string} oldPassword - 当前主密码
+   * @param {string} newPassword - 新主密码
+   * @param {string} hint - 新密码提示语
+   * @returns {Promise<{success: boolean, message: string}>}
+   */
+  async changeMasterPassword(oldPassword, newPassword, hint = '') {
+    try {
+      // 1. 验证新密码强度
+      const validation = this.validatePasswordStrength(newPassword);
+      if (!validation.valid) {
+        return { success: false, message: validation.message };
+      }
+
+      // 2. 验证旧密码
+      const verifyResult = await this.verifyMasterPassword(oldPassword);
+      if (!verifyResult.success) {
+        return { success: false, message: '当前密码错误' };
+      }
+      const oldKey = verifyResult.key;
+
+      // 3. 获取所有账号并用旧密钥解密
+      const data = await chrome.storage.local.get('accounts');
+      const accounts = data.accounts || [];
+      const decryptedAccounts = [];
+
+      for (const account of accounts) {
+        try {
+          if (account.password) {
+            const decryptedPwd = await this.decrypt(account.password, oldKey);
+            decryptedAccounts.push({ ...account, _plainPassword: decryptedPwd });
+          } else {
+            decryptedAccounts.push({ ...account, _plainPassword: '' });
+          }
+        } catch (e) {
+          console.warn(`账号 ${account.username} 解密失败:`, e);
+          return { success: false, message: `账号 "${account.username}" 解密失败，修改已中止` };
+        }
+      }
+
+      // 4. 生成新的安全配置
+      const newSalt = this.generateSalt();
+      const newKey = await this.deriveKey(newPassword, newSalt);
+      const verificationData = await this.encrypt(this.VERIFICATION_TEXT, newKey);
+
+      // 5. 用新密钥重新加密所有账号密码
+      const reEncryptedAccounts = [];
+      for (const account of decryptedAccounts) {
+        const encrypted = account._plainPassword
+          ? await this.encrypt(account._plainPassword, newKey)
+          : '';
+        const { _plainPassword, ...rest } = account;
+        reEncryptedAccounts.push({ ...rest, password: encrypted });
+      }
+
+      // 6. 原子性写入：安全配置 + 重新加密的账号
+      const securityConfig = {
+        version: '2.0',
+        salt: this.arrayBufferToBase64(newSalt.buffer),
+        iterations: this.PBKDF2_ITERATIONS,
+        verificationData: verificationData,
+        hint: hint,
+        createdAt: Date.now()
+      };
+
+      await chrome.storage.local.set({
+        securityConfig,
+        accounts: reEncryptedAccounts
+      });
+
+      // 7. 更新会话密钥
+      const exportedKey = await crypto.subtle.exportKey('raw', newKey);
+      await chrome.runtime.sendMessage({
+        action: 'setSessionKey',
+        keyData: this.arrayBufferToBase64(exportedKey),
+        mode: 'default'
+      });
+
+      return { success: true, message: '主密码修改成功' };
+    } catch (error) {
+      console.error('修改主密码失败:', error);
+      return { success: false, message: '修改失败：' + error.message };
     }
   }
 

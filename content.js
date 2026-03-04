@@ -719,6 +719,13 @@ class FloatingPanel {
     }
 
     try {
+      // 获取会话密钥
+      const sessionKey = await getSessionKey();
+      if (!sessionKey) {
+        showErrorMessage('会话已过期，请在扩展弹窗中重新验证主密码');
+        return;
+      }
+
       // 加密密码
       let encryptedPassword;
       if (!window.cryptoUtils) {
@@ -726,7 +733,7 @@ class FloatingPanel {
         return;
       }
       try {
-        encryptedPassword = await window.cryptoUtils.encryptPassword(password);
+        encryptedPassword = await window.cryptoUtils.encryptPassword(password, sessionKey);
       } catch (error) {
         console.error('密码加密失败:', error);
         showErrorMessage('密码加密失败：' + error.message);
@@ -786,6 +793,11 @@ class FloatingPanel {
         const option = createElement('option', { value: env.id }, [env.name || '未命名网站']);
         envSelect.appendChild(option);
       });
+
+      // 单网站自动选中
+      if (environments.length === 1 && !this.currentEnvId) {
+        this.switchEnvironment(environments[0].id);
+      }
     } catch (error) {
       console.error('加载网站失败:', error);
     }
@@ -944,15 +956,31 @@ class FloatingPanel {
         return;
       }
       
+      // 获取会话密钥并解密密码
+      const sessionKey = await getSessionKey();
+      if (!sessionKey) {
+        showErrorMessage('会话已过期，请在扩展弹窗中重新验证主密码');
+        return;
+      }
+
+      let decryptedPassword;
+      try {
+        decryptedPassword = await window.cryptoUtils.decryptPassword(account.password, sessionKey);
+      } catch (error) {
+        console.error('密码解密失败:', error);
+        showErrorMessage('密码解密失败：' + error.message);
+        return;
+      }
+
       // 智能查找登录表单
       const loginForm = this.findLoginForm();
       if (!loginForm) {
         showErrorMessage('未找到登录表单，请确保当前页面包含登录表单');
         return;
       }
-      
-      // 填充表单
-      this.fillLoginForm(loginForm, account);
+
+      // 使用解密后的密码填充表单
+      this.fillLoginForm(loginForm, { ...account, password: decryptedPassword });
       
       // 获取当前网站的登录按钮配置
       const envResult = await chrome.storage.local.get('environments');
