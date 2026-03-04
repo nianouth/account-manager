@@ -6,13 +6,13 @@
 
 // ============== UI 常量 ==============
 var COLORS = {
-  PRIMARY: '#518EFF',
-  PRIMARY_LIGHT: '#A0C3FF',
+  PRIMARY: '#007AFF',
+  PRIMARY_LIGHT: '#5AC8FA',
   TEXT: '#333333',
   TEXT_SECONDARY: '#666666',
   BORDER: '#E0E0E0',
-  CANCEL_BG: '#E6EFFB',
-  ERROR: '#F44336'
+  CANCEL_BG: '#E8F0FE',
+  ERROR: '#FF3B30'
 };
 
 var PANEL = {
@@ -113,6 +113,32 @@ async function matchEnvironment(currentUrl) {
     return matchEnvByUrl(currentUrl, result.environments || []);
   } catch (error) {
     console.error('网站匹配失败:', error);
+    return null;
+  }
+}
+
+// 从 background.js 获取会话密钥（content script 版本，不依赖 ES module）
+async function getSessionKey() {
+  try {
+    var response = await chrome.runtime.sendMessage({ action: 'getSessionKey' });
+    if (response && response.keyData) {
+      var binary = atob(response.keyData);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      var key = await crypto.subtle.importKey(
+        'raw',
+        bytes,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      return key;
+    }
+    return null;
+  } catch (error) {
+    console.debug('获取会话密钥失败:', error);
     return null;
   }
 }
