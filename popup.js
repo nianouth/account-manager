@@ -300,8 +300,13 @@ class AccountManager {
         envSelect.appendChild(option);
       });
 
-      // 单网站自动选中
-      if (environments.length === 1 && !this.currentEnvId) {
+      // 尝试匹配当前标签页 URL 自动选中网站
+      const matched = await this.matchCurrentTabEnv(environments);
+      if (matched) {
+        envSelect.value = matched.id;
+        this.switchEnvironment(matched.id);
+      } else if (environments.length === 1 && !this.currentEnvId) {
+        // 单网站自动选中（兜底）
         envSelect.value = environments[0].id;
         this.switchEnvironment(environments[0].id);
       }
@@ -315,6 +320,35 @@ class AccountManager {
     }
   }
   
+  /**
+   * 匹配当前标签页 URL 与网站列表，返回匹配的网站或 null
+   */
+  async matchCurrentTabEnv(environments) {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.url || !tab.url.startsWith('http')) return null;
+
+      const normalize = (urlStr) => {
+        try {
+          const u = new URL(urlStr);
+          return (u.protocol + '//' + u.host + u.pathname).replace(/\/$/, '');
+        } catch { return urlStr; }
+      };
+
+      const currentUrl = normalize(tab.url);
+
+      for (const env of environments) {
+        if (!env.loginUrl) continue;
+        const envUrl = normalize(env.loginUrl);
+        if (currentUrl === envUrl) return env;
+        if (envUrl.endsWith('/*') && currentUrl.startsWith(envUrl.slice(0, -2))) return env;
+      }
+    } catch (error) {
+      console.debug('匹配当前标签页URL失败:', error);
+    }
+    return null;
+  }
+
   /**
    * 渲染"网站"Tab 中的网站列表
    */

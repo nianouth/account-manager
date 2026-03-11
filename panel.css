@@ -9,7 +9,7 @@
     top: 0;
     left: 0;
     right: auto;
-    transform: translate3d(calc(100vw - 360px), 80px, 0);
+    transform: translate3d(120px, calc(50vh - 200px), 0);
     width: 340px;
     max-width: calc(100vw - 20px);
     max-height: calc(100vh - 20px);

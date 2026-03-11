@@ -268,7 +268,7 @@ class FloatingPanel {
       style: {
         position: 'fixed',
         top: '10px',
-        right: '10px',
+        left: '10px',
         width: PANEL.WIDTH,
         backgroundColor: 'white',
         borderRadius: '8px',
