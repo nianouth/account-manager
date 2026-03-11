@@ -125,7 +125,13 @@ class PanelDragger {
     try {
       const saved = localStorage.getItem('account-manager-panel-position');
       if (saved) {
-        const { x, y } = JSON.parse(saved);
+        let { x, y } = JSON.parse(saved);
+        // 边界校验：确保面板在视口内
+        const rect = this.panel.getBoundingClientRect();
+        const maxX = window.innerWidth - rect.width;
+        const maxY = window.innerHeight - rect.height;
+        x = Math.max(0, Math.min(x, maxX));
+        y = Math.max(0, Math.min(y, maxY));
         this.currentX = x;
         this.currentY = y;
         this.applyPosition(x, y);
@@ -308,12 +314,14 @@ class FloatingPanel {
     // 账号列表
     const accountList = createElement('div', {
       id: 'account-list',
+      'data-role': 'list',
       style: {
         maxHeight: '300px',
         overflowY: 'auto',
         padding: '10px'
       }
     });
+    accountList.setAttribute('role', 'list');
     
     // 底部
     const footer = createElement('div', {
@@ -754,7 +762,177 @@ class FloatingPanel {
       showErrorMessage('保存失败: ' + error.message);
     }
   }
-  
+
+  showEditAccountForm(account) {
+    // 移除已有的编辑模态框
+    const existingModal = document.getElementById('floating-edit-account-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = createElement('div', {
+      id: 'floating-edit-account-modal',
+      style: {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        zIndex: PANEL.MODAL_Z_INDEX,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    });
+
+    const formContent = createElement('div', {
+      style: {
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        width: '90%',
+        maxWidth: '400px',
+        maxHeight: '80vh',
+        overflowY: 'auto'
+      }
+    });
+
+    const title = createElement('h3', {
+      style: { margin: '0 0 15px 0', fontSize: '16px', color: '#333333' }
+    }, ['编辑账号']);
+
+    const form = createElement('form');
+
+    const createField = (labelText, id, value, type = 'text', required = true) => {
+      const group = createElement('div', { style: { marginBottom: '15px' } });
+      const label = createElement('label', {
+        style: { display: 'block', marginBottom: '5px', fontSize: '13px', color: '#666666' }
+      }, [labelText]);
+      const input = createElement('input', {
+        type,
+        id,
+        value: value || '',
+        required,
+        style: {
+          width: '100%',
+          padding: '8px 12px',
+          border: '1px solid #E0E0E0',
+          borderRadius: '6px',
+          fontSize: '14px',
+          boxSizing: 'border-box'
+        }
+      });
+      group.appendChild(label);
+      group.appendChild(input);
+      return group;
+    };
+
+    form.appendChild(createField('用户名 *', 'edit-username', account.username));
+    form.appendChild(createField('账号 *', 'edit-account', account.account));
+    form.appendChild(createField('密码 *', 'edit-password', account.password, 'password'));
+
+    // 备注
+    const noteGroup = createElement('div', { style: { marginBottom: '15px' } });
+    const noteLabel = createElement('label', {
+      style: { display: 'block', marginBottom: '5px', fontSize: '13px', color: '#666666' }
+    }, ['备注']);
+    const noteInput = createElement('textarea', {
+      id: 'edit-note',
+      rows: '2',
+      style: {
+        width: '100%',
+        padding: '8px 12px',
+        border: '1px solid #E0E0E0',
+        borderRadius: '6px',
+        fontSize: '14px',
+        boxSizing: 'border-box',
+        fontFamily: 'inherit',
+        resize: 'vertical',
+        minHeight: '60px'
+      }
+    });
+    noteInput.value = account.note || '';
+    noteGroup.appendChild(noteLabel);
+    noteGroup.appendChild(noteInput);
+    form.appendChild(noteGroup);
+
+    // 按钮
+    const buttonGroup = createElement('div', {
+      style: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }
+    });
+
+    const cancelBtn = createElement('button', {
+      type: 'button',
+      style: {
+        padding: '8px 16px', border: 'none', borderRadius: '6px',
+        cursor: 'pointer', fontSize: '14px', backgroundColor: '#E6EFFB', color: '#333333'
+      }
+    }, ['取消']);
+    cancelBtn.addEventListener('click', () => modal.remove());
+
+    const submitBtn = createElement('button', {
+      type: 'submit',
+      style: {
+        padding: '8px 16px', border: 'none', borderRadius: '6px',
+        cursor: 'pointer', fontSize: '14px', backgroundColor: COLORS.PRIMARY, color: 'white'
+      }
+    }, ['保存']);
+
+    buttonGroup.appendChild(cancelBtn);
+    buttonGroup.appendChild(submitBtn);
+    form.appendChild(buttonGroup);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('edit-username').value.trim();
+      const acc = document.getElementById('edit-account').value.trim();
+      const password = document.getElementById('edit-password').value;
+      const note = document.getElementById('edit-note')?.value.trim() || '';
+
+      if (!username || !acc || !password) {
+        showErrorMessage('请填写所有必填字段');
+        return;
+      }
+
+      try {
+        const result = await chrome.storage.local.get('accounts');
+        const accounts = result.accounts || [];
+        const idx = accounts.findIndex(a => a.id === account.id);
+        if (idx === -1) {
+          showErrorMessage('账号不存在');
+          return;
+        }
+        accounts[idx] = { ...accounts[idx], username, account: acc, password, note };
+        await chrome.storage.local.set({ accounts });
+        await this.loadAccounts(this.currentEnvId);
+        modal.remove();
+        showSuccessMessage('账号已更新');
+      } catch (error) {
+        showErrorMessage('更新失败: ' + error.message);
+      }
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+
+    formContent.appendChild(title);
+    formContent.appendChild(form);
+    modal.appendChild(formContent);
+    document.body.appendChild(modal);
+  }
+
+  async handleDeleteAccount(accountId) {
+    try {
+      const result = await chrome.storage.local.get('accounts');
+      const accounts = (result.accounts || []).filter(a => a.id !== accountId);
+      await chrome.storage.local.set({ accounts });
+      await this.loadAccounts(this.currentEnvId);
+      showSuccessMessage('账号已删除');
+    } catch (error) {
+      showErrorMessage('删除失败: ' + error.message);
+    }
+  }
+
   async loadEnvironments() {
     try {
       const result = await chrome.storage.local.get('environments');
@@ -885,22 +1063,32 @@ class FloatingPanel {
     if (account.note && account.note.trim()) {
       const accountNote = createElement('div', {
         style: {
-          fontSize: '9px',
-          color: '#CCCCCC',
+          fontSize: '11px',
+          color: '#999999',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-          opacity: '0.7',
           lineHeight: '1.3'
         }
       });
       safeSetTextContent(accountNote, account.note.trim());
       accountInfoContainer.appendChild(accountNote);
     }
-    
+
+    // 按钮容器
+    const btnContainer = createElement('div', {
+      style: {
+        display: 'flex',
+        gap: '4px',
+        flexShrink: '0',
+        alignItems: 'center'
+      }
+    });
+
     const loginBtn = createElement('button', {
       class: 'login-btn',
       'data-account-id': account.id,
+      tabindex: '0',
       style: {
         padding: '4px 12px',
         backgroundColor: COLORS.PRIMARY,
@@ -909,17 +1097,70 @@ class FloatingPanel {
         borderRadius: '4px',
         cursor: 'pointer',
         fontSize: '12px',
-        flexShrink: '0',
         whiteSpace: 'nowrap'
       }
     }, ['登录']);
-    
+
     loginBtn.addEventListener('click', () => {
       this.handleLogin(account.id);
     });
-    
+
+    const editBtn = createElement('button', {
+      tabindex: '0',
+      'aria-label': '编辑账号',
+      style: {
+        padding: '4px 8px',
+        backgroundColor: '#5AC8FA',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '11px',
+        whiteSpace: 'nowrap'
+      }
+    }, ['编辑']);
+
+    editBtn.addEventListener('click', () => {
+      this.showEditAccountForm(account);
+    });
+
+    const deleteBtn = createElement('button', {
+      tabindex: '0',
+      'aria-label': '删除账号',
+      style: {
+        padding: '4px 8px',
+        backgroundColor: COLORS.ERROR,
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '11px',
+        whiteSpace: 'nowrap'
+      }
+    }, ['删除']);
+
+    deleteBtn.addEventListener('click', async () => {
+      if (confirm('确定要删除此账号吗？')) {
+        await this.handleDeleteAccount(account.id);
+      }
+    });
+
+    btnContainer.appendChild(loginBtn);
+    btnContainer.appendChild(editBtn);
+    btnContainer.appendChild(deleteBtn);
+
+    // 键盘可访问性：Enter/Space 触发登录
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('role', 'listitem');
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.handleLogin(account.id);
+      }
+    });
+
     item.appendChild(accountInfoContainer);
-    item.appendChild(loginBtn);
+    item.appendChild(btnContainer);
     
     return item;
   }
@@ -951,8 +1192,8 @@ class FloatingPanel {
       const envResult = await chrome.storage.local.get('environments');
       const environments = envResult.environments || [];
       const currentEnv = environments.find(e => e.id === this.currentEnvId);
-      const loginButtonId = currentEnv?.loginButtonId || 'ch_login_btn';
-      const loginButtonClass = currentEnv?.loginButtonClass || 'formBtn';
+      const loginButtonId = currentEnv?.loginButtonId || '';
+      const loginButtonClass = currentEnv?.loginButtonClass || '';
       
       // 直接提交登录表单
       this.submitLoginForm(loginForm, loginButtonId, loginButtonClass);
@@ -1035,8 +1276,8 @@ class FloatingPanel {
   }
   
   submitLoginForm(form, loginButtonId, loginButtonClass) {
-    const defaultId = loginButtonId || 'ch_login_btn';
-    const defaultClass = loginButtonClass || 'formBtn';
+    const defaultId = loginButtonId || '';
+    const defaultClass = loginButtonClass || '';
     
     // 优先使用配置的按钮选择器
     let submitButton = null;
