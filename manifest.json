@@ -36,7 +36,7 @@
         "content.js"
       ],
       "css": [
-        "styles.css"
+        "design-tokens.css"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -50,5 +50,11 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["panel.css"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "minimum_chrome_version": "88"
 }

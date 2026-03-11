@@ -1,0 +1,239 @@
+/**
+ * 账号管理器 - 悬浮面板样式（Shadow DOM 内部）
+ * CSS 自定义属性从宿主页面的 design-tokens.css 继承
+ */
+
+/* 悬浮面板基础样式 */
+#account-manager-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: auto;
+    transform: translate3d(calc(100vw - 360px), 80px, 0);
+    width: 340px;
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+    background: var(--bg-grouped, #F2F2F7);
+    border-radius: var(--radius-xl, 20px);
+    border: none;
+    z-index: 2147483647;
+    font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: opacity var(--transition-spring, 400ms) ease-out, box-shadow var(--transition-spring, 400ms) ease-out;
+    animation: panelFadeIn var(--transition-spring, 400ms) ease-out;
+    box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.12));
+    will-change: transform;
+}
+
+@keyframes panelFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#account-manager-panel * {
+    box-sizing: border-box;
+}
+
+/* 面板头部 */
+#account-manager-panel .panel-header {
+    padding: 12px;
+    border-bottom: none;
+    background: var(--primary-color, #007AFF);
+    color: white;
+    flex-shrink: 0;
+    cursor: move;
+    user-select: none;
+}
+
+#account-manager-panel h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+#account-manager-panel #env-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary, #000);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#account-manager-panel #env-select:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background-color: white;
+}
+
+#account-manager-panel #env-select:focus {
+    outline: none;
+    border-color: white;
+    background-color: white;
+}
+
+/* 账号列表容器 */
+#account-manager-panel #account-list {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    background-color: var(--bg-grouped, #F2F2F7);
+    flex: 1;
+    min-height: 0;
+}
+
+/* 自定义滚动条 */
+#account-manager-panel #account-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#account-manager-panel #account-list::-webkit-scrollbar-track {
+    background: var(--bg-tertiary, #E5E5EA);
+    border-radius: 3px;
+}
+
+#account-manager-panel #account-list::-webkit-scrollbar-thumb {
+    background: var(--border-color, #D1D1D6);
+    border-radius: 3px;
+    border: 1px solid var(--border-color, #D1D1D6);
+}
+
+#account-manager-panel #account-list::-webkit-scrollbar-thumb:hover {
+    background: var(--border-hover, #007AFF);
+}
+
+/* 账号项样式 - iOS 卡片风格 */
+#account-manager-panel .account-item {
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    background-color: var(--bg-primary, #FFFFFF);
+    border-radius: var(--radius-lg, 16px);
+    border: none;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+    transition: all var(--transition-spring, 400ms);
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#account-manager-panel .account-item:hover {
+    background-color: var(--bg-hover, #E8F0FE);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    transform: translateY(-2px) scale(1.01);
+}
+
+/* 账号信息区域 */
+#account-manager-panel .account-item > div:first-child {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+    font-size: 13px;
+    color: #333333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 登录按钮 */
+#account-manager-panel .login-btn {
+    padding: 6px 16px;
+    background: var(--success-color, #34C759);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md, 12px);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all var(--transition-fast, 150ms);
+    flex-shrink: 0;
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+#account-manager-panel .login-btn:hover {
+    background: var(--success-hover, #248A3D);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    transform: scale(1.05);
+}
+
+#account-manager-panel .login-btn:active {
+    transform: scale(0.97);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* 添加账号按钮 */
+#account-manager-panel #add-account-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary-color, #007AFF);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg, 16px);
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all var(--transition-base, 250ms);
+    margin-top: 12px;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+#account-manager-panel #add-account-btn:hover {
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+    transform: scale(1.02);
+}
+
+#account-manager-panel #add-account-btn:active {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* 拖拽样式 */
+#account-manager-panel.dragging {
+    cursor: move;
+    opacity: 0.92;
+    transition: none;
+    will-change: transform;
+    user-select: none;
+}
+
+/* 空状态样式 */
+#account-manager-panel .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666666;
+    font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    #account-manager-panel {
+        width: calc(100vw - 20px);
+        max-width: 360px;
+    }
+}
+
+/* 防止与页面样式冲突 */
+#account-manager-panel input,
+#account-manager-panel select,
+#account-manager-panel button {
+    font-family: inherit;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* 确保面板可见 */
+#account-manager-panel {
+    pointer-events: auto;
+    visibility: visible;
+    display: flex;
+}

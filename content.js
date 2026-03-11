@@ -154,7 +154,7 @@ class FloatingPanel {
   }
   
   init() {
-    if (document.getElementById('account-manager-panel')) {
+    if (document.getElementById('account-manager-host')) {
       return; // 已存在
     }
     
@@ -234,7 +234,7 @@ class FloatingPanel {
       this.hidePanel();
     } else {
       // 如果面板已隐藏，重新显示
-      if (this.panel && this.panel.style.display === 'none') {
+      if (this.host && this.host.style.display === 'none') {
         this.showPanel();
       }
       // 切换到匹配的网站
@@ -243,19 +243,22 @@ class FloatingPanel {
   }
   
   hidePanel() {
-    if (this.panel) {
+    if (this.host) {
       // 如果面板处于折叠状态，先恢复展开状态（以便下次显示时状态正确）
       if (this.isCollapsed) {
         this.expandFromCircle();
       }
-      // 隐藏面板
-      this.panel.style.display = 'none';
+      // 隐藏宿主元素
+      this.host.style.display = 'none';
     }
   }
-  
+
   showPanel() {
-    if (this.panel) {
-      this.panel.style.display = 'flex';
+    if (this.host) {
+      this.host.style.display = '';
+      if (this.panel) {
+        this.panel.style.display = 'flex';
+      }
     }
   }
   
@@ -351,15 +354,28 @@ class FloatingPanel {
     this.panel.appendChild(accountList);
     this.panel.appendChild(footer);
     
-    document.body.appendChild(this.panel);
-    
+    // 使用 Shadow DOM 隔离样式，避免宿主页面干扰
+    this.host = document.createElement('div');
+    this.host.id = 'account-manager-host';
+    this.host.style.cssText = 'all: initial; position: fixed; z-index: 2147483647; top: 0; left: 0; width: 0; height: 0; overflow: visible;';
+    this.shadow = this.host.attachShadow({ mode: 'open' });
+
+    // 加载面板样式
+    const linkEl = document.createElement('link');
+    linkEl.rel = 'stylesheet';
+    linkEl.href = chrome.runtime.getURL('panel.css');
+    this.shadow.appendChild(linkEl);
+
+    this.shadow.appendChild(this.panel);
+    document.body.appendChild(this.host);
+
     // 初始化拖拽
     this.dragger = new PanelDragger(this.panel, header);
   }
   
   setupEventListeners() {
-    const envSelect = document.getElementById('env-select');
-    const addBtn = document.getElementById('add-account-btn');
+    const envSelect = this.panel.querySelector('#env-select');
+    const addBtn = this.panel.querySelector('#add-account-btn');
     
     envSelect?.addEventListener('change', (e) => {
       this.switchEnvironment(e.target.value);
@@ -937,15 +953,15 @@ class FloatingPanel {
     try {
       const result = await chrome.storage.local.get('environments');
       const environments = result.environments || [];
-      const envSelect = document.getElementById('env-select');
-      
+      const envSelect = this.panel.querySelector('#env-select');
+
       if (!envSelect) return;
-      
+
       // 清空现有选项（保留默认选项）
       while (envSelect.children.length > 1) {
         envSelect.removeChild(envSelect.lastChild);
       }
-      
+
       environments.forEach(env => {
         const option = createElement('option', { value: env.id }, [env.name || '未命名网站']);
         envSelect.appendChild(option);
@@ -959,10 +975,10 @@ class FloatingPanel {
       console.error('加载网站失败:', error);
     }
   }
-  
+
   async switchEnvironment(envId) {
     this.currentEnvId = envId;
-    const envSelect = document.getElementById('env-select');
+    const envSelect = this.panel.querySelector('#env-select');
     if (envSelect) {
       envSelect.value = envId;
     }
@@ -971,7 +987,7 @@ class FloatingPanel {
   
   async loadAccounts(envId) {
     if (!envId) {
-      const accountList = document.getElementById('account-list');
+      const accountList = this.panel.querySelector('#account-list');
       if (accountList) {
         accountList.innerHTML = '';
         const emptyMsg = createElement('div', {
@@ -991,7 +1007,7 @@ class FloatingPanel {
       const result = await chrome.storage.local.get('accounts');
       const accounts = result.accounts || [];
       const envAccounts = accounts.filter(account => account.envId === envId);
-      const accountList = document.getElementById('account-list');
+      const accountList = this.panel.querySelector('#account-list');
       
       if (!accountList) return;
       

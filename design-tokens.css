@@ -1,0 +1,65 @@
+/**
+ * 账号管理器 - 统一设计令牌
+ * 所有 CSS 变量的唯一来源，popup.css 和 panel.css 共用
+ */
+
+:root {
+    /* 主色 */
+    --primary-color: #007AFF;
+    --primary-hover: #0051D5;
+    --primary-light: #5AC8FA;
+    --secondary-color: #8E8E93;
+    --success-color: #34C759;
+    --success-hover: #248A3D;
+    --danger-color: #FF3B30;
+    --danger-hover: #D70015;
+    --warning-color: #FF9500;
+    --warning-hover: #C93400;
+    --info-color: #5AC8FA;
+    --info-hover: #0A84FF;
+
+    /* 中性色 */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F2F2F7;
+    --bg-tertiary: #E5E5EA;
+    --bg-hover: #E8F0FE;
+    --bg-grouped: #F2F2F7;
+    --border-color: #D1D1D6;
+    --border-hover: #007AFF;
+    --separator: rgba(60, 60, 67, 0.12);
+    --text-primary: #000000;
+    --text-secondary: #3C3C43;
+    --text-tertiary: #8E8E93;
+    --text-muted: #C7C7CC;
+
+    /* 间距 */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+
+    /* 圆角 */
+    --radius-xs: 8px;
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    /* 边框 */
+    --border-width: 1px;
+
+    /* 动画 */
+    --transition-spring: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 150ms ease-out;
+
+    /* 字体 */
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+}
