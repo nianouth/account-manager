@@ -1,15 +1,10 @@
 /**
  * 账号管理器 - 后台服务脚本
  * 符合 Chrome Extension Manifest V3 规范
- * v2.0.0: 添加会话管理、密钥存储、数据迁移
+ * v2.0.0: 数据备份与恢复
  */
 
 import { matchEnvironment as matchEnvByUrl } from './utils/url-matcher.js';
-
-// ============== 会话管理 ==============
-// Service Worker 内存中的会话密钥（SW 休眠后从 chrome.storage.session 恢复）
-// 关闭浏览器时 chrome.storage.session 自动清除，需要重新输入主密码
-let sessionKey = null;
 
 // 初始化默认数据
 const initializeDefaultData = async () => {
@@ -50,52 +45,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === 'install') {
     await initializeDefaultData();
-    console.log('欢迎使用账号管理器 v2.0！首次使用请设置主密码。');
+    console.log('欢迎使用账号管理器！');
   } else if (details.reason === 'update') {
     const version = chrome.runtime.getManifest().version;
     console.log('扩展已更新到版本:', version);
-
-    // 检测是否需要从旧版本迁移
-    const needsMigration = await checkNeedsMigration();
-    if (needsMigration) {
-      console.log('检测到旧版本数据，需要迁移到新安全系统');
-      // 自动备份旧数据
-      await backupOldData();
-    }
   }
 });
-
-/**
- * 检测是否需要从旧版本迁移
- */
-async function checkNeedsMigration() {
-  try {
-    const result = await chrome.storage.local.get('masterPassword');
-    return !!result.masterPassword;
-  } catch (error) {
-    console.error('检测迁移状态失败:', error);
-    return false;
-  }
-}
-
-/**
- * 备份旧版本数据
- */
-async function backupOldData() {
-  try {
-    const oldData = await chrome.storage.local.get(['environments', 'accounts', 'masterPassword']);
-    await chrome.storage.local.set({
-      backup_v1_2_0: {
-        timestamp: Date.now(),
-        version: '1.2.0',
-        data: oldData
-      }
-    });
-    console.log('旧版本数据已自动备份');
-  } catch (error) {
-    console.error('备份旧数据失败:', error);
-  }
-}
 
 // 监听标签页更新，自动切换网站
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -132,61 +87,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 });
 
-// 消息处理：会话管理、数据备份与恢复
+// 消息处理：数据备份与恢复
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // 使用 async/await 处理异步操作
   (async () => {
     try {
-      // ========== 会话管理 ==========
-      if (request.action === 'setSessionKey') {
-        sessionKey = request.keyData;
-
-        // 存到 chrome.storage.session，防止 SW 休眠丢失
-        // 关闭浏览器时自动清除，无超时限制
-        try {
-          await chrome.storage.session.set({ sessionKey: request.keyData });
-        } catch (e) {
-          console.debug('chrome.storage.session 不可用:', e.message);
-        }
-
-        sendResponse({ success: true });
-        return;
-      }
-
-      if (request.action === 'getSessionKey') {
-        // 先检查内存
-        if (sessionKey) {
-          sendResponse({ success: true, keyData: sessionKey });
-          return;
-        }
-
-        // 内存没有（SW 重启过），从 session storage 恢复
-        try {
-          const data = await chrome.storage.session.get(['sessionKey']);
-          if (data.sessionKey) {
-            sessionKey = data.sessionKey;
-            sendResponse({ success: true, keyData: sessionKey });
-            return;
-          }
-        } catch (e) {
-          console.debug('chrome.storage.session 不可用:', e.message);
-        }
-
-        sendResponse({ success: false, message: '请验证主密码' });
-        return;
-      }
-
-      if (request.action === 'clearSession') {
-        sessionKey = null;
-        try {
-          await chrome.storage.session.remove(['sessionKey']);
-        } catch (e) {
-          console.debug('清除 session storage 失败:', e.message);
-        }
-        sendResponse({ success: true });
-        return;
-      }
-
       // ========== 数据备份与恢复 ==========
       if (request.action === 'backupData') {
         const result = await chrome.storage.local.get(['environments', 'accounts']);

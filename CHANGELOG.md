@@ -7,6 +7,19 @@
 
 ---
 
+## [2.1.0] - 2026-03-11
+
+### 🔧 重构
+- **移除主密码与加密机制**：去掉整个会话密钥/主密码验证/AES-GCM 加密体系，密码改为明文存储，大幅简化代码
+- **删除 security-manager.js 和 crypto-utils.js**：移除约 800 行安全相关代码
+- **精简 background.js**：移除会话管理（setSessionKey/getSessionKey/clearSession）和数据迁移逻辑
+- **精简 popup.js**：移除 initializeSecurity、ensureSessionKey、promptMasterPasswordSetup/Verification/Change、promptDataMigration 等方法
+- **精简 content.js/content-utils.js**：移除密码加解密和会话密钥获取逻辑
+- **清理 popup.html**：移除主密码设置项和密码强度指示器
+- **清理 manifest.json**：从 content_scripts 中移除 crypto-utils.js
+
+---
+
 ## [2.1.0] - 2026-03-04
 
 ### ✨ 新增功能

@@ -5,9 +5,6 @@
  */
 
 // ES6 模块导入
-// cryptoUtils 通过 <script src="crypto-utils.js"> 全局加载（兼容 content_scripts）
-const { cryptoUtils } = window;
-import { securityManager } from './security-manager.js';
 import {
   safeSetTextContent,
   createElement
@@ -19,8 +16,7 @@ import {
 } from './utils/toast.js';
 import {
   validateEnvironment,
-  validateAccount,
-  checkPasswordStrength
+  validateAccount
 } from './utils/validation.js';
 import {
   showAlert,
@@ -106,10 +102,7 @@ class AccountManager {
     this.setupTabNavigation();
     this.setupEventListeners();
 
-    // v2.0: 初始化安全配置（仅首次使用或迁移时弹窗）
-    await this.initializeSecurity();
-
-    // 加载数据（账号列表只显示用户名，不解密密码，无需主密码）
+    // 加载数据
     this.loadEnvironments();
   }
 
@@ -189,11 +182,6 @@ class AccountManager {
       this.openEnvModal();
     });
     
-    // 设置页面 - 修改主密码
-    document.getElementById('changeMasterPasswordBtn')?.addEventListener('click', () => {
-      this.promptChangeMasterPassword();
-    });
-
     // 添加账号按钮
     const addAccountBtn = document.getElementById('addAccountBtn');
     addAccountBtn?.addEventListener('click', () => {
@@ -266,10 +254,6 @@ class AccountManager {
         passwordToggle.setAttribute('aria-label', isPassword ? '隐藏密码' : '显示密码');
       });
 
-      // 密码强度检测
-      passwordInput.addEventListener('input', (e) => {
-        this.checkPasswordStrength(e.target.value);
-      });
     }
     
     // 导出按钮
@@ -576,24 +560,7 @@ class AccountManager {
     copyPasswordBtn.title = '复制密码';
     copyPasswordBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      // 解密密码
-      let decryptedPassword = account.password;
-      if (cryptoUtils && account.password) {
-        try {
-          // 确保会话密钥存在
-          const sessionKey = await this.ensureSessionKey();
-          if (!sessionKey) {
-            showErrorMessage('无法获取会话密钥');
-            return;
-          }
-          decryptedPassword = await cryptoUtils.decryptPassword(account.password, sessionKey);
-        } catch (error) {
-          console.error('密码解密失败:', error);
-          showErrorMessage('密码解密失败：' + error.message);
-          return;
-        }
-      }
-      this.copyToClipboard(decryptedPassword || '', '密码已复制');
+      this.copyToClipboard(account.password || '', '密码已复制');
     });
 
     passwordRow.appendChild(passwordLabel);
@@ -677,71 +644,6 @@ class AccountManager {
     }
   }
 
-  // 检测密码强度
-  checkPasswordStrength(password) {
-    const strengthIndicator = document.getElementById('passwordStrength');
-    const strengthText = document.getElementById('passwordStrengthText');
-    const strengthBars = document.querySelectorAll('.strength-bar');
-
-    if (!password || password.length === 0) {
-      if (strengthIndicator) strengthIndicator.style.display = 'none';
-      return;
-    }
-
-    if (strengthIndicator) strengthIndicator.style.display = 'block';
-
-    let strength = 0;
-    let strengthLabel = '';
-    let strengthColor = '';
-
-    // 长度检查
-    if (password.length >= 8) strength++;
-    if (password.length >= 12) strength++;
-
-    // 字符类型检查
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++; // 大小写
-    if (/[0-9]/.test(password)) strength++; // 数字
-    if (/[^a-zA-Z0-9]/.test(password)) strength++; // 特殊字符
-
-    // 计算最终强度等级（1-4）
-    let level = Math.min(4, Math.ceil(strength / 1.5));
-
-    // 设置标签和颜色
-    switch (level) {
-      case 1:
-        strengthLabel = '弱';
-        strengthColor = 'var(--danger-color)';
-        break;
-      case 2:
-        strengthLabel = '中等';
-        strengthColor = 'var(--warning-color)';
-        break;
-      case 3:
-        strengthLabel = '强';
-        strengthColor = 'var(--info-color)';
-        break;
-      case 4:
-        strengthLabel = '非常强';
-        strengthColor = 'var(--success-color)';
-        break;
-    }
-
-    // 更新强度条
-    strengthBars.forEach((bar, index) => {
-      if (index < level) {
-        bar.classList.add('active');
-      } else {
-        bar.classList.remove('active');
-      }
-    });
-
-    // 更新文本
-    if (strengthText) {
-      strengthText.textContent = `密码强度：${strengthLabel}`;
-      strengthText.style.color = strengthColor;
-    }
-  }
-  
   async handleLogin(accountId) {
     try {
       const result = await chrome.storage.local.get('accounts');
@@ -753,29 +655,8 @@ class AccountManager {
         return;
       }
       
-      // 解密密码（如果已加密）
-      let decryptedPassword = account.password;
-      if (cryptoUtils && account.password) {
-        try {
-          // 确保会话密钥存在
-          const sessionKey = await this.ensureSessionKey();
-          if (!sessionKey) {
-            showErrorMessage('无法获取会话密钥');
-            return;
-          }
-          decryptedPassword = await cryptoUtils.decryptPassword(account.password, sessionKey);
-        } catch (error) {
-          console.error('密码解密失败:', error);
-          showErrorMessage('密码解密失败：' + error.message);
-          return;
-        }
-      }
-
-      // 创建账号副本，使用解密后的密码
-      const accountWithDecryptedPassword = {
-        ...account,
-        password: decryptedPassword
-      };
+      // 创建账号副本
+      const accountWithDecryptedPassword = { ...account };
       
       // 获取当前网站的登录按钮配置
       const envResult = await chrome.storage.local.get('environments');
@@ -807,8 +688,6 @@ class AccountManager {
   }
   
   // 这个函数会在页面上下文中执行
-  // 注意：由于在页面上下文中执行，无法直接访问cryptoUtils
-  // 需要先解密密码，然后传递给这个函数
   fillLoginForm(account, loginButtonId, loginButtonClass) {
     // 查找登录表单
     const selectors = [
@@ -851,7 +730,7 @@ class AccountManager {
         }
       }
     
-    // 填充密码（account.password 应该已经是解密后的）
+    // 填充密码
     const passwordInput = form.querySelector('input[type="password"]');
     if (passwordInput && !passwordInput.disabled && !passwordInput.readOnly) {
       passwordInput.value = account.password || '';
@@ -1000,27 +879,7 @@ class AccountManager {
           document.getElementById('accountUsername').value = account.username || '';
           document.getElementById('accountAccount').value = account.account || '';
 
-          // 解密密码用于编辑（如果已加密）
-          let decryptedPassword = account.password;
-          if (cryptoUtils && account.password) {
-            try {
-              // 确保会话密钥存在
-              const sessionKey = await this.ensureSessionKey();
-              if (!sessionKey) {
-                showErrorMessage('无法获取会话密钥');
-                this.accountModal.close();
-                return;
-              }
-              decryptedPassword = await cryptoUtils.decryptPassword(account.password, sessionKey);
-            } catch (error) {
-              console.error('密码解密失败:', error);
-              showErrorMessage('密码解密失败：' + error.message);
-              this.accountModal.close();
-              return;
-            }
-          }
-
-          document.getElementById('accountPassword').value = decryptedPassword || '';
+          document.getElementById('accountPassword').value = account.password || '';
           document.getElementById('accountNote').value = account.note || '';
           this.currentAccountId = accountId;
         }
@@ -1219,26 +1078,9 @@ class AccountManager {
     }
     
     try {
-      // 获取会话密钥（如过期则自动提示验证）
-      const sessionKey = await this.ensureSessionKey();
-      if (!sessionKey) {
-        showErrorMessage('未能获取会话密钥，请重试');
-        return;
-      }
-
-      // 加密密码（不再降级为明文，加密失败将抛出异常）
-      let encryptedPassword;
-      try {
-        encryptedPassword = await cryptoUtils.encryptPassword(password, sessionKey);
-      } catch (error) {
-        console.error('密码加密失败:', error);
-        showErrorMessage('密码加密失败：' + error.message);
-        return; // 不保存账号
-      }
-      
       const result = await chrome.storage.local.get('accounts');
       const accounts = result.accounts || [];
-      
+
       if (this.currentAccountId) {
         // 编辑模式
         const index = accounts.findIndex(a => a.id === this.currentAccountId);
@@ -1247,7 +1089,7 @@ class AccountManager {
             ...accounts[index],
             username: username,
             account: account,
-            password: encryptedPassword,
+            password: password,
             note: note || '',
             updatedAt: Date.now()
           };
@@ -1273,7 +1115,7 @@ class AccountManager {
           envId: this.currentEnvId,
           username: username,
           account: account,
-          password: encryptedPassword,
+          password: password,
           note: note || '',
           createdAt: Date.now()
         };
@@ -1326,29 +1168,17 @@ class AccountManager {
   async exportData() {
     try {
       // 显示安全警告
-      const confirmed = await showConfirm('导出数据', '导出的文件包含加密的账号密码数据。请注意：\n\n1. 请妥善保管此文件，不要分享给他人\n2. 不要通过不安全的渠道传输\n3. 建议将文件存储在加密的位置\n4. 使用后请及时删除', { confirmText: '导出' });
+      const confirmed = await showConfirm('导出数据', '导出的文件包含账号密码数据。请注意：\n\n1. 请妥善保管此文件，不要分享给他人\n2. 不要通过不安全的渠道传输\n3. 使用后请及时删除', { confirmText: '导出' });
       if (!confirmed) return;
 
       const result = await chrome.storage.local.get(['environments', 'accounts']);
       const environments = result.environments || [];
       const accounts = result.accounts || [];
 
-      // 验证所有密码是否已加密
-      for (const account of accounts) {
-        if (!cryptoUtils.isBase64(account.password)) {
-          showErrorMessage(
-            `账号 "${account.username}" 的密码未加密，无法导出。` +
-            '请先设置主密码并重新保存所有账号。'
-          );
-          return;
-        }
-      }
-
       // 构建导出数据
       const exportData = {
         version: '2.0',
         exportTime: new Date().toISOString(),
-        securityNotice: '此文件包含加密数据，请妥善保管',
         environments: environments,
         accounts: accounts
       };
@@ -1533,798 +1363,6 @@ class AccountManager {
     }
   }
 
-  // ========== 安全功能（v2.0新增） ==========
-
-  /**
-   * 初始化安全配置
-   * 在 init() 中调用，确保用户已设置主密码
-   * @returns {Promise<boolean>} 初始化是否成功
-   */
-  async initializeSecurity() {
-    try {
-      // 1. 检查是否需要从旧版本迁移
-      const needsMigration = await securityManager.needsMigration();
-      if (needsMigration) {
-        await this.promptDataMigration();
-        return true;
-      }
-
-      // 2. 检查是否已设置主密码（首次使用必须设置）
-      const hasSecurityConfig = await securityManager.hasSecurityConfig();
-      if (!hasSecurityConfig) {
-        await this.promptMasterPasswordSetup();
-        return true;
-      }
-
-      // 3. 不再强制验证主密码，延迟到实际需要解密/加密时再验证
-      // 通过 ensureSessionKey() 按需触发
-      return true;
-    } catch (error) {
-      console.error('安全初始化失败:', error);
-      showErrorMessage('安全初始化失败：' + error.message);
-      return false;
-    }
-  }
-
-  /**
-   * 首次设置主密码（自定义模态框，不可关闭）
-   */
-  promptMasterPasswordSetup() {
-    return new Promise(resolve => {
-      // 移除旧对话框
-      document.getElementById('master-password-setup-dialog')?.remove();
-
-      const overlay = document.createElement('div');
-      overlay.id = 'master-password-setup-dialog';
-      overlay.className = 'modal active dialog-modal';
-
-      const content = document.createElement('div');
-      content.className = 'modal-content dialog-content';
-      content.style.maxWidth = '380px';
-
-      content.innerHTML = `
-        <div class="modal-header">
-          <h2>设置主密码</h2>
-        </div>
-        <div class="dialog-body">
-          <p style="margin:0 0 12px;font-size:14px;color:var(--text-secondary);">
-            为了保护您的账号安全，请设置主密码。
-          </p>
-          <div class="form-group">
-            <label>主密码 *</label>
-            <div class="password-input-wrapper">
-              <input type="password" id="setupPassword" class="dialog-input" placeholder="至少 8 位，包含大小写字母和数字">
-              <button type="button" class="password-toggle-btn" data-target="setupPassword" aria-label="显示/隐藏密码">
-                <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            <div class="dialog-strength" id="setupStrength" style="display:none;">
-              <div class="strength-bar" data-level="1"></div>
-              <div class="strength-bar" data-level="2"></div>
-              <div class="strength-bar" data-level="3"></div>
-              <div class="strength-bar" data-level="4"></div>
-            </div>
-            <div id="setupStrengthText" class="dialog-hint"></div>
-          </div>
-          <div class="form-group">
-            <label>确认密码 *</label>
-            <div class="password-input-wrapper">
-              <input type="password" id="setupConfirmPassword" class="dialog-input" placeholder="再次输入主密码">
-              <button type="button" class="password-toggle-btn" data-target="setupConfirmPassword" aria-label="显示/隐藏密码">
-                <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom:0;">
-            <label>密码提示（可选）</label>
-            <input type="text" id="setupHint" class="dialog-input" placeholder="帮助你回忆密码的提示语">
-            <div class="dialog-hint">提示语会在密码验证失败时显示</div>
-          </div>
-          <div class="dialog-error" id="setupError"></div>
-        </div>
-        <div class="form-actions">
-          <button class="btn-submit" id="setupSubmitBtn" style="min-width:100%;">设置主密码</button>
-        </div>
-      `;
-
-      overlay.appendChild(content);
-      document.body.appendChild(overlay);
-
-      // 密码眼睛切换
-      content.querySelectorAll('.password-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const targetId = btn.getAttribute('data-target');
-          const input = document.getElementById(targetId);
-          if (input) {
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-            btn.classList.toggle('show-password', isPassword);
-          }
-        });
-      });
-
-      // 密码强度检测
-      const passwordInput = document.getElementById('setupPassword');
-      const strengthContainer = document.getElementById('setupStrength');
-      const strengthText = document.getElementById('setupStrengthText');
-      passwordInput.addEventListener('input', () => {
-        const val = passwordInput.value;
-        if (!val) {
-          strengthContainer.style.display = 'none';
-          strengthText.textContent = '';
-          return;
-        }
-        strengthContainer.style.display = 'flex';
-        const result = checkPasswordStrength(val);
-        const bars = strengthContainer.querySelectorAll('.strength-bar');
-        bars.forEach((bar, i) => {
-          bar.style.background = i < result.level
-            ? ['var(--danger-color)', 'var(--warning-color)', 'var(--info-color)', 'var(--success-color)'][result.level - 1]
-            : 'var(--border-color)';
-        });
-        strengthText.textContent = result.text;
-      });
-
-      const errorDiv = document.getElementById('setupError');
-      const showSetupError = (msg) => {
-        errorDiv.textContent = msg;
-        errorDiv.classList.add('show');
-      };
-      const hideSetupError = () => {
-        errorDiv.textContent = '';
-        errorDiv.classList.remove('show');
-      };
-
-      // 提交
-      document.getElementById('setupSubmitBtn').addEventListener('click', async () => {
-        hideSetupError();
-        const password = document.getElementById('setupPassword').value;
-        const confirmPwd = document.getElementById('setupConfirmPassword').value;
-        const hint = document.getElementById('setupHint').value.trim();
-
-        if (!password) {
-          showSetupError('请输入主密码');
-          return;
-        }
-
-        const validation = securityManager.validatePasswordStrength(password);
-        if (!validation.valid) {
-          showSetupError(validation.message);
-          return;
-        }
-
-        if (password !== confirmPwd) {
-          showSetupError('两次输入的密码不一致');
-          return;
-        }
-
-        const result = await securityManager.initializeMasterPassword(password, hint);
-        if (result.success) {
-          overlay.remove();
-          showSuccessMessage('主密码设置成功！');
-          resolve();
-        } else {
-          showSetupError('设置失败：' + result.message);
-        }
-      });
-
-      // Enter 提交
-      content.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          document.getElementById('setupSubmitBtn').click();
-        }
-      });
-
-      setTimeout(() => passwordInput.focus(), 50);
-    });
-  }
-
-  /**
-   * 验证主密码（会话过期时，自定义模态框）
-   */
-  promptMasterPasswordVerification() {
-    return new Promise(resolve => {
-      // 移除旧对话框
-      document.getElementById('master-password-verify-dialog')?.remove();
-
-      const overlay = document.createElement('div');
-      overlay.id = 'master-password-verify-dialog';
-      overlay.className = 'modal active dialog-modal';
-
-      const content = document.createElement('div');
-      content.className = 'modal-content dialog-content';
-
-      // 步骤1：密码输入
-      const renderPasswordStep = () => {
-        content.innerHTML = `
-          <div class="modal-header">
-            <h2>验证主密码</h2>
-          </div>
-          <div class="dialog-body">
-            <p style="margin:0 0 12px;font-size:14px;color:var(--text-secondary);">
-              会话已过期，请输入主密码以继续。
-            </p>
-            <div class="form-group" style="margin-bottom:0;">
-              <div class="password-input-wrapper">
-                <input type="password" id="verifyPassword" class="dialog-input" placeholder="输入主密码">
-                <button type="button" class="password-toggle-btn" aria-label="显示/隐藏密码" id="verifyToggle">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <button type="button" class="dialog-link-btn" id="showHintBtn">显示密码提示</button>
-            <div class="dialog-password-hint" id="verifyHint"></div>
-            <div class="dialog-error" id="verifyError"></div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-submit" id="verifySubmitBtn" style="min-width:100%;">验证</button>
-          </div>
-        `;
-
-        // 眼睛切换
-        document.getElementById('verifyToggle').addEventListener('click', () => {
-          const input = document.getElementById('verifyPassword');
-          const btn = document.getElementById('verifyToggle');
-          const isPassword = input.type === 'password';
-          input.type = isPassword ? 'text' : 'password';
-          btn.classList.toggle('show-password', isPassword);
-        });
-
-        // 显示密码提示
-        document.getElementById('showHintBtn').addEventListener('click', async () => {
-          const hint = await securityManager.getPasswordHint();
-          const hintDiv = document.getElementById('verifyHint');
-          if (hint) {
-            hintDiv.textContent = hint;
-            hintDiv.classList.add('show');
-          } else {
-            hintDiv.textContent = '未设置密码提示';
-            hintDiv.classList.add('show');
-          }
-          document.getElementById('showHintBtn').style.display = 'none';
-        });
-
-        const errorDiv = document.getElementById('verifyError');
-
-        // 提交验证
-        const doVerify = async () => {
-          const password = document.getElementById('verifyPassword').value;
-          if (!password) {
-            errorDiv.textContent = '请输入主密码';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          errorDiv.classList.remove('show');
-          const result = await securityManager.verifyMasterPassword(password);
-
-          if (result.success) {
-            overlay.remove();
-            showSuccessMessage('验证成功');
-            resolve();
-          } else {
-            errorDiv.textContent = '主密码错误';
-            errorDiv.classList.add('show');
-            // 同时显示密码提示
-            const hint = await securityManager.getPasswordHint();
-            if (hint) {
-              const hintDiv = document.getElementById('verifyHint');
-              hintDiv.textContent = hint;
-              hintDiv.classList.add('show');
-              document.getElementById('showHintBtn').style.display = 'none';
-            }
-          }
-        };
-
-        document.getElementById('verifySubmitBtn').addEventListener('click', doVerify);
-        content.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') { e.preventDefault(); doVerify(); }
-        });
-        setTimeout(() => document.getElementById('verifyPassword')?.focus(), 50);
-      };
-
-      overlay.appendChild(content);
-      document.body.appendChild(overlay);
-      renderPasswordStep();
-    });
-  }
-
-  /**
-   * 修改主密码（3步模态框）
-   */
-  promptChangeMasterPassword() {
-    return new Promise(resolve => {
-      document.getElementById('change-password-dialog')?.remove();
-
-      const overlay = document.createElement('div');
-      overlay.id = 'change-password-dialog';
-      overlay.className = 'modal active dialog-modal';
-
-      const content = document.createElement('div');
-      content.className = 'modal-content dialog-content';
-      content.style.maxWidth = '380px';
-
-      // 通用：密码眼睛切换绑定
-      const bindToggle = (container) => {
-        container.querySelectorAll('.password-toggle-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const targetId = btn.getAttribute('data-target');
-            const input = document.getElementById(targetId);
-            if (input) {
-              const isPassword = input.type === 'password';
-              input.type = isPassword ? 'text' : 'password';
-              btn.classList.toggle('show-password', isPassword);
-            }
-          });
-        });
-      };
-
-      // 允许点击外部关闭
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-          overlay.remove();
-          resolve();
-        }
-      });
-
-      let verifiedOldPassword = '';
-
-      // 步骤1：验证当前密码
-      const renderStep1 = () => {
-        content.innerHTML = `
-          <div class="modal-header">
-            <h2>修改主密码</h2>
-          </div>
-          <div class="dialog-body">
-            <p style="margin:0 0 12px;font-size:14px;color:var(--text-secondary);">
-              请先验证当前主密码。
-            </p>
-            <div class="form-group" style="margin-bottom:0;">
-              <label>当前密码</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="chgOldPassword" class="dialog-input" placeholder="输入当前主密码">
-                <button type="button" class="password-toggle-btn" data-target="chgOldPassword" aria-label="显示/隐藏密码">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div class="dialog-error" id="chgStep1Error"></div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" id="chgStep1Cancel">取消</button>
-            <button class="btn-submit" id="chgStep1Next">下一步</button>
-          </div>
-        `;
-
-        bindToggle(content);
-
-        const errorDiv = document.getElementById('chgStep1Error');
-
-        const doNext = async () => {
-          const oldPwd = document.getElementById('chgOldPassword').value;
-          if (!oldPwd) {
-            errorDiv.textContent = '请输入当前密码';
-            errorDiv.classList.add('show');
-            return;
-          }
-          errorDiv.classList.remove('show');
-
-          const result = await securityManager.verifyMasterPassword(oldPwd);
-          if (!result.success) {
-            errorDiv.textContent = '当前密码错误';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          verifiedOldPassword = oldPwd;
-          renderStep2();
-        };
-
-        document.getElementById('chgStep1Cancel').addEventListener('click', () => {
-          overlay.remove();
-          resolve();
-        });
-        document.getElementById('chgStep1Next').addEventListener('click', doNext);
-        content.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); doNext(); } };
-        setTimeout(() => document.getElementById('chgOldPassword')?.focus(), 50);
-      };
-
-      // 步骤2：输入新密码
-      const renderStep2 = () => {
-        content.innerHTML = `
-          <div class="modal-header">
-            <h2>设置新密码</h2>
-          </div>
-          <div class="dialog-body">
-            <div class="form-group">
-              <label>新密码 *</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="chgNewPassword" class="dialog-input" placeholder="至少 8 位，包含大小写字母和数字">
-                <button type="button" class="password-toggle-btn" data-target="chgNewPassword" aria-label="显示/隐藏密码">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-              <div class="dialog-strength" id="chgStrength" style="display:none;">
-                <div class="strength-bar" data-level="1"></div>
-                <div class="strength-bar" data-level="2"></div>
-                <div class="strength-bar" data-level="3"></div>
-                <div class="strength-bar" data-level="4"></div>
-              </div>
-              <div id="chgStrengthText" class="dialog-hint"></div>
-            </div>
-            <div class="form-group">
-              <label>确认新密码 *</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="chgConfirmPassword" class="dialog-input" placeholder="再次输入新密码">
-                <button type="button" class="password-toggle-btn" data-target="chgConfirmPassword" aria-label="显示/隐藏密码">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label>密码提示（可选）</label>
-              <input type="text" id="chgHint" class="dialog-input" placeholder="帮助你回忆密码的提示语">
-            </div>
-            <div class="dialog-error" id="chgStep2Error"></div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" id="chgStep2Back">返回</button>
-            <button class="btn-submit" id="chgStep2Submit">确认修改</button>
-          </div>
-        `;
-
-        bindToggle(content);
-
-        // 密码强度检测
-        const passwordInput = document.getElementById('chgNewPassword');
-        const strengthContainer = document.getElementById('chgStrength');
-        const strengthText = document.getElementById('chgStrengthText');
-        passwordInput.addEventListener('input', () => {
-          const val = passwordInput.value;
-          if (!val) {
-            strengthContainer.style.display = 'none';
-            strengthText.textContent = '';
-            return;
-          }
-          strengthContainer.style.display = 'flex';
-          const result = checkPasswordStrength(val);
-          const bars = strengthContainer.querySelectorAll('.strength-bar');
-          bars.forEach((bar, i) => {
-            bar.style.background = i < result.level
-              ? ['var(--danger-color)', 'var(--warning-color)', 'var(--info-color)', 'var(--success-color)'][result.level - 1]
-              : 'var(--border-color)';
-          });
-          strengthText.textContent = result.text;
-        });
-
-        const errorDiv = document.getElementById('chgStep2Error');
-
-        const doSubmit = async () => {
-          const newPwd = document.getElementById('chgNewPassword').value;
-          const confirmPwd = document.getElementById('chgConfirmPassword').value;
-          const hint = document.getElementById('chgHint').value.trim();
-
-          if (!newPwd) {
-            errorDiv.textContent = '请输入新密码';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          const validation = securityManager.validatePasswordStrength(newPwd);
-          if (!validation.valid) {
-            errorDiv.textContent = validation.message;
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          if (newPwd !== confirmPwd) {
-            errorDiv.textContent = '两次输入的密码不一致';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          if (newPwd === verifiedOldPassword) {
-            errorDiv.textContent = '新密码不能与当前密码相同';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          errorDiv.classList.remove('show');
-
-          // 禁用按钮防止重复提交
-          const submitBtn = document.getElementById('chgStep2Submit');
-          submitBtn.disabled = true;
-          submitBtn.textContent = '修改中...';
-
-          const result = await securityManager.changeMasterPassword(verifiedOldPassword, newPwd, hint);
-          if (result.success) {
-            overlay.remove();
-            showSuccessMessage('主密码修改成功');
-            resolve();
-          } else {
-            submitBtn.disabled = false;
-            submitBtn.textContent = '确认修改';
-            errorDiv.textContent = result.message;
-            errorDiv.classList.add('show');
-          }
-        };
-
-        document.getElementById('chgStep2Back').addEventListener('click', renderStep1);
-        document.getElementById('chgStep2Submit').addEventListener('click', doSubmit);
-        content.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); doSubmit(); } };
-        setTimeout(() => document.getElementById('chgNewPassword')?.focus(), 50);
-      };
-
-      overlay.appendChild(content);
-      document.body.appendChild(overlay);
-      renderStep1();
-    });
-  }
-
-  /**
-   * 确保会话密钥存在（如果不存在则提示验证主密码）
-   * @returns {Promise<string|null>} 会话密钥
-   */
-  async ensureSessionKey() {
-    let sessionKey = await securityManager.getSessionKey();
-
-    if (!sessionKey) {
-      // 会话过期，要求验证主密码
-      await this.promptMasterPasswordVerification();
-
-      // 重新获取会话密钥
-      sessionKey = await securityManager.getSessionKey();
-    }
-
-    return sessionKey;
-  }
-
-  /**
-   * 数据迁移向导（从旧版本，分步模态框）
-   */
-  promptDataMigration() {
-    return new Promise(resolve => {
-      document.getElementById('migration-dialog')?.remove();
-
-      const overlay = document.createElement('div');
-      overlay.id = 'migration-dialog';
-      overlay.className = 'modal active dialog-modal';
-
-      const content = document.createElement('div');
-      content.className = 'modal-content dialog-content';
-      content.style.maxWidth = '380px';
-
-      // 步骤1：迁移说明
-      const renderIntro = () => {
-        content.innerHTML = `
-          <div class="modal-header"><h2>数据迁移</h2></div>
-          <div class="dialog-body">
-            <p style="margin:0 0 12px;font-size:14px;color:var(--text-secondary);">
-              检测到旧版本数据，需要迁移到新的安全系统。
-            </p>
-            <p style="margin:0;font-size:13px;color:var(--text-tertiary);line-height:1.8;">
-              迁移过程：<br>
-              1. 输入旧主密码<br>
-              2. 设置新主密码<br>
-              3. 自动重新加密所有密码<br><br>
-              旧数据已自动备份，可放心操作。
-            </p>
-          </div>
-          <div class="form-actions">
-            <button class="btn-submit" id="migStartBtn" style="min-width:100%;">开始迁移</button>
-          </div>
-        `;
-        document.getElementById('migStartBtn').addEventListener('click', renderOldPassword);
-      };
-
-      // 步骤2：旧密码
-      const renderOldPassword = () => {
-        content.innerHTML = `
-          <div class="modal-header"><h2>输入旧密码</h2></div>
-          <div class="dialog-body">
-            <div class="form-group" style="margin-bottom:0;">
-              <label>旧主密码</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="migOldPassword" class="dialog-input" placeholder="输入旧版本的主密码">
-                <button type="button" class="password-toggle-btn" id="migOldToggle" aria-label="显示/隐藏密码">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                </button>
-              </div>
-            </div>
-            <div class="dialog-error" id="migOldError"></div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" id="migOldBack">返回</button>
-            <button class="btn-submit" id="migOldNext">下一步</button>
-          </div>
-        `;
-
-        document.getElementById('migOldToggle').addEventListener('click', () => {
-          const input = document.getElementById('migOldPassword');
-          const btn = document.getElementById('migOldToggle');
-          const isPassword = input.type === 'password';
-          input.type = isPassword ? 'text' : 'password';
-          btn.classList.toggle('show-password', isPassword);
-        });
-
-        document.getElementById('migOldBack').addEventListener('click', renderIntro);
-        document.getElementById('migOldNext').addEventListener('click', () => {
-          const pwd = document.getElementById('migOldPassword').value;
-          if (!pwd) {
-            const err = document.getElementById('migOldError');
-            err.textContent = '请输入旧主密码';
-            err.classList.add('show');
-            return;
-          }
-          renderNewPassword(pwd);
-        });
-        content.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('migOldNext').click(); } };
-        setTimeout(() => document.getElementById('migOldPassword')?.focus(), 50);
-      };
-
-      // 步骤3：新密码
-      const renderNewPassword = (oldPassword) => {
-        content.innerHTML = `
-          <div class="modal-header"><h2>设置新密码</h2></div>
-          <div class="dialog-body">
-            <div class="form-group">
-              <label>新主密码</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="migNewPassword" class="dialog-input" placeholder="至少 8 位，包含大小写字母和数字">
-                <button type="button" class="password-toggle-btn" id="migNewToggle" aria-label="显示/隐藏密码">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                </button>
-              </div>
-              <div class="dialog-strength" id="migStrength" style="display:none;">
-                <div class="strength-bar" data-level="1"></div>
-                <div class="strength-bar" data-level="2"></div>
-                <div class="strength-bar" data-level="3"></div>
-                <div class="strength-bar" data-level="4"></div>
-              </div>
-              <div id="migStrengthText" class="dialog-hint"></div>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label>确认新密码</label>
-              <div class="password-input-wrapper">
-                <input type="password" id="migConfirmPassword" class="dialog-input" placeholder="再次输入新密码">
-                <button type="button" class="password-toggle-btn" id="migConfirmToggle" aria-label="显示/隐藏密码">
-                  <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                  <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                </button>
-              </div>
-            </div>
-            <div class="dialog-error" id="migNewError"></div>
-          </div>
-          <div class="form-actions">
-            <button class="btn-cancel" id="migNewBack">返回</button>
-            <button class="btn-submit" id="migNewSubmit">开始迁移</button>
-          </div>
-        `;
-
-        // 眼睛切换
-        ['migNewToggle', 'migConfirmToggle'].forEach(id => {
-          const btn = document.getElementById(id);
-          const targetId = id === 'migNewToggle' ? 'migNewPassword' : 'migConfirmPassword';
-          btn.addEventListener('click', () => {
-            const input = document.getElementById(targetId);
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-            btn.classList.toggle('show-password', isPassword);
-          });
-        });
-
-        // 密码强度
-        const newPwdInput = document.getElementById('migNewPassword');
-        const strengthContainer = document.getElementById('migStrength');
-        const strengthText = document.getElementById('migStrengthText');
-        newPwdInput.addEventListener('input', () => {
-          const val = newPwdInput.value;
-          if (!val) { strengthContainer.style.display = 'none'; strengthText.textContent = ''; return; }
-          strengthContainer.style.display = 'flex';
-          const result = checkPasswordStrength(val);
-          strengthContainer.querySelectorAll('.strength-bar').forEach((bar, i) => {
-            bar.style.background = i < result.level
-              ? ['var(--danger-color)', 'var(--warning-color)', 'var(--info-color)', 'var(--success-color)'][result.level - 1]
-              : 'var(--border-color)';
-          });
-          strengthText.textContent = result.text;
-        });
-
-        document.getElementById('migNewBack').addEventListener('click', renderOldPassword);
-
-        const errorDiv = document.getElementById('migNewError');
-        document.getElementById('migNewSubmit').addEventListener('click', async () => {
-          const newPwd = document.getElementById('migNewPassword').value;
-          const confirmPwd = document.getElementById('migConfirmPassword').value;
-
-          if (!newPwd) {
-            errorDiv.textContent = '请输入新主密码';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          const validation = securityManager.validatePasswordStrength(newPwd);
-          if (!validation.valid) {
-            errorDiv.textContent = validation.message;
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          if (newPwd !== confirmPwd) {
-            errorDiv.textContent = '两次输入的密码不一致';
-            errorDiv.classList.add('show');
-            return;
-          }
-
-          errorDiv.classList.remove('show');
-          showInfoMessage('正在迁移数据，请稍候...');
-
-          const result = await securityManager.migrateFromOldVersion(oldPassword, newPwd);
-          if (result.success) {
-            overlay.remove();
-            showSuccessMessage('数据迁移成功！');
-            await this.loadEnvironments();
-            resolve();
-          } else {
-            errorDiv.textContent = '迁移失败：' + result.message;
-            errorDiv.classList.add('show');
-          }
-        });
-
-        content.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('migNewSubmit').click(); } };
-        setTimeout(() => newPwdInput.focus(), 50);
-      };
-
-      overlay.appendChild(content);
-      document.body.appendChild(overlay);
-      renderIntro();
-    });
-  }
 }
 
 // 初始化

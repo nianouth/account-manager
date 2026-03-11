@@ -117,41 +117,6 @@ async function matchEnvironment(currentUrl) {
   }
 }
 
-// 从 background.js 获取会话密钥（content script 版本，不依赖 ES module）
-// 带重试机制：SW 被杀后重启需要短暂时间，首次 sendMessage 可能失败
-async function getSessionKey(retries) {
-  if (retries === undefined) retries = 2;
-  for (var attempt = 0; attempt <= retries; attempt++) {
-    try {
-      var response = await chrome.runtime.sendMessage({ action: 'getSessionKey' });
-      if (response && response.keyData) {
-        var binary = atob(response.keyData);
-        var bytes = new Uint8Array(binary.length);
-        for (var i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        var key = await crypto.subtle.importKey(
-          'raw',
-          bytes,
-          { name: 'AES-GCM', length: 256 },
-          true,
-          ['encrypt', 'decrypt']
-        );
-        return key;
-      }
-      // response 存在但无 keyData，说明会话确实过期，无需重试
-      return null;
-    } catch (error) {
-      console.debug('获取会话密钥失败 (尝试 ' + (attempt + 1) + '):', error.message);
-      // 通信失败（SW 重启中），等待后重试
-      if (attempt < retries) {
-        await new Promise(function(r) { setTimeout(r, 300); });
-      }
-    }
-  }
-  return null;
-}
-
 // 显示成功提示消息
 function showSuccessMessage(message, duration) {
   duration = duration || 2000;

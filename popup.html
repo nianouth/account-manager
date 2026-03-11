@@ -1831,13 +1831,6 @@
         <!-- ===== 设置页面 ===== -->
         <div class="tab-pane" id="tab-settings">
             <div class="settings-section">
-                <h3 class="settings-title">安全</h3>
-                <div class="setting-item">
-                    <span class="setting-label">修改主密码</span>
-                    <button class="btn-link" id="changeMasterPasswordBtn">修改 ›</button>
-                </div>
-            </div>
-            <div class="settings-section">
                 <h3 class="settings-title">数据管理</h3>
                 <div class="setting-item">
                     <span class="setting-label">导入数据</span>
@@ -1938,16 +1931,6 @@
                             </svg>
                         </button>
                     </div>
-                    <!-- 密码强度指示器 -->
-                    <div id="passwordStrength" style="margin-top: 8px; display: none;">
-                        <div style="display: flex; gap: 4px; margin-bottom: 4px;">
-                            <div class="strength-bar" data-level="1"></div>
-                            <div class="strength-bar" data-level="2"></div>
-                            <div class="strength-bar" data-level="3"></div>
-                            <div class="strength-bar" data-level="4"></div>
-                        </div>
-                        <div id="passwordStrengthText" style="font-size: 12px; color: var(--text-secondary);"></div>
-                    </div>
                     <div class="error-message" id="accountPasswordError"></div>
                 </div>
                 <div class="form-group">
@@ -1963,8 +1946,6 @@
         </div>
     </div>
     
-    <!-- crypto-utils 需要在 content_scripts 中作为普通脚本运行，不能用 export -->
-    <script src="crypto-utils.js"></script>
     <!-- ES6 Module: popup.js 会自动导入其他模块 -->
     <script type="module" src="popup.js"></script>
 </body>

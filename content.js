@@ -719,36 +719,15 @@ class FloatingPanel {
     }
 
     try {
-      // 获取会话密钥
-      const sessionKey = await getSessionKey();
-      if (!sessionKey) {
-        showErrorMessage('会话已过期或连接失败，请点击扩展图标重新验证主密码');
-        return;
-      }
-
-      // 加密密码
-      let encryptedPassword;
-      if (!window.cryptoUtils) {
-        showErrorMessage('加密模块未加载，无法安全保存密码');
-        return;
-      }
-      try {
-        encryptedPassword = await window.cryptoUtils.encryptPassword(password, sessionKey);
-      } catch (error) {
-        console.error('密码加密失败:', error);
-        showErrorMessage('密码加密失败：' + error.message);
-        return;
-      }
-      
       const result = await chrome.storage.local.get('accounts');
       const accounts = result.accounts || [];
-      
+
       const newAccount = {
         id: Date.now().toString(),
         envId: this.currentEnvId,
         username: username,
         account: account,
-        password: encryptedPassword,
+        password: password,
         note: note,
         createdAt: Date.now()
       };
@@ -956,21 +935,7 @@ class FloatingPanel {
         return;
       }
       
-      // 获取会话密钥并解密密码
-      const sessionKey = await getSessionKey();
-      if (!sessionKey) {
-        showErrorMessage('会话已过期或连接失败，请点击扩展图标重新验证主密码');
-        return;
-      }
-
-      let decryptedPassword;
-      try {
-        decryptedPassword = await window.cryptoUtils.decryptPassword(account.password, sessionKey);
-      } catch (error) {
-        console.error('密码解密失败:', error);
-        showErrorMessage('密码解密失败：' + error.message);
-        return;
-      }
+      const decryptedPassword = account.password;
 
       // 智能查找登录表单
       const loginForm = this.findLoginForm();
