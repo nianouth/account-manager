@@ -1191,6 +1191,11 @@ class FloatingPanel {
       
       // 直接提交登录表单
       this.submitLoginForm(loginForm, loginButtonId, loginButtonClass);
+
+      // 登录后自动隐藏面板
+      setTimeout(() => {
+        this.hidePanel();
+      }, 500);
     } catch (error) {
       console.error('登录失败:', error);
       showErrorMessage('登录失败: ' + error.message);
