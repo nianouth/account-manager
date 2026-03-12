@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "账号管理器",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "悬浮式账号管理器，支持多网站多账号管理",
   "author": "Account Manager",
   "permissions": [

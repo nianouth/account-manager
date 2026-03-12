@@ -885,10 +885,21 @@ class AccountManager {
         }
       });
     } else {
-      // 添加模式：清空表单
+      // 添加模式：清空表单，并自动读取当前页签信息
       this.resetEnvForm();
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tab = tabs[0];
+        if (tab) {
+          if (tab.title) {
+            document.getElementById('envName').value = tab.title;
+          }
+          if (tab.url && tab.url.startsWith('http')) {
+            document.getElementById('envLoginUrl').value = tab.url;
+          }
+        }
+      });
     }
-    
+
     this.envModal.open();
   }
   
