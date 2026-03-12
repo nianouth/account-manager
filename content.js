@@ -263,96 +263,57 @@ class FloatingPanel {
   }
   
   createPanel() {
-    this.panel = createElement('div', {
-      id: 'account-manager-panel',
-      style: {
-        position: 'fixed',
-        top: '10px',
-        left: '10px',
-        width: PANEL.WIDTH,
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        zIndex: PANEL.Z_INDEX,
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        display: 'flex',
-        flexDirection: 'column'
-      }
-    });
-    
+    this.panel = createElement('div', { id: 'account-manager-panel' });
+
     // 头部
-    const header = createElement('div', {
-      class: 'panel-header',
-      style: {
-        padding: '10px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        cursor: 'move'
-      }
+    const header = createElement('div', { class: 'panel-header' });
+
+    // 头部行：标题 + 折叠按钮
+    const headerRow = createElement('div', { class: 'panel-header-row' });
+    const title = createElement('h3', {}, ['账号管理器']);
+    const collapseBtn = createElement('button', {
+      class: 'panel-collapse-btn',
+      'aria-label': '折叠面板'
+    }, ['−']);
+    collapseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.collapseToCircle();
     });
-    
-    const title = createElement('h3', {
-      style: {
-        margin: '0 0 10px 0',
-        fontSize: '16px',
-        color: '#333333'
-      }
-    }, ['账号管理器']);
-    
-    const envSelect = createElement('select', {
-      id: 'env-select',
-      style: {
-        width: '100%',
-        padding: '5px',
-        border: '1px solid #E0E0E0',
-        borderRadius: '4px',
-        fontSize: '14px'
-      }
-    });
+    headerRow.appendChild(title);
+    headerRow.appendChild(collapseBtn);
+    header.appendChild(headerRow);
+
+    // 网站选择器
+    const envSelect = createElement('select', { id: 'env-select' });
     const defaultOption = createElement('option', { value: '' }, ['选择网站']);
     envSelect.appendChild(defaultOption);
-    
-    header.appendChild(title);
     header.appendChild(envSelect);
-    
+
+    // 拖拽指示器
+    const dragHandle = createElement('div', { class: 'panel-drag-handle' });
+    header.appendChild(dragHandle);
+
     // 账号列表
-    const accountList = createElement('div', {
-      id: 'account-list',
-      'data-role': 'list',
-      style: {
-        maxHeight: '300px',
-        overflowY: 'auto',
-        padding: '10px'
-      }
-    });
+    const accountList = createElement('div', { id: 'account-list', 'data-role': 'list' });
     accountList.setAttribute('role', 'list');
-    
+
     // 底部
-    const footer = createElement('div', {
-      style: {
-        padding: '10px',
-        borderTop: '1px solid #E0E0E0'
-      }
-    });
-    
-    const addBtn = createElement('button', {
-      id: 'add-account-btn',
-      style: {
-        width: '100%',
-        padding: '8px',
-        backgroundColor: COLORS.PRIMARY,
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '14px'
-      }
-    }, ['添加账号']);
-    
+    const footer = createElement('div', { class: 'panel-footer' });
+    const addBtn = createElement('button', { id: 'add-account-btn' }, ['添加账号']);
     footer.appendChild(addBtn);
-    
+
+    // 折叠态圆形图标（预创建）
+    const circleIcon = createElement('div', { class: 'circle-icon' }, ['✓']);
+    circleIcon.title = '点击展开账号管理器';
+    circleIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.expandFromCircle();
+    });
+
     this.panel.appendChild(header);
     this.panel.appendChild(accountList);
     this.panel.appendChild(footer);
+    this.panel.appendChild(circleIcon);
     
     // 使用 Shadow DOM 隔离样式，避免宿主页面干扰
     this.host = document.createElement('div');
@@ -408,7 +369,8 @@ class FloatingPanel {
         left: '0',
         width: '100%',
         height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(4px)',
         zIndex: PANEL.MODAL_Z_INDEX,
         display: 'flex',
         alignItems: 'center',
@@ -418,21 +380,25 @@ class FloatingPanel {
     
     const formContent = createElement('div', {
       style: {
-        backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '8px',
+        backgroundColor: COLORS.BG_SECONDARY,
+        padding: '24px',
+        borderRadius: '14px',
         width: '90%',
-        maxWidth: '400px',
+        maxWidth: '380px',
         maxHeight: '80vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(212,160,74,0.1)'
       }
     });
-    
+
     const title = createElement('h3', {
       style: {
         margin: '0 0 15px 0',
-        fontSize: '16px',
-        color: '#333333'
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontSize: '18px',
+        fontWeight: '700',
+        color: COLORS.TEXT
       }
     }, ['添加账号']);
     
@@ -450,8 +416,11 @@ class FloatingPanel {
       style: {
         display: 'block',
         marginBottom: '5px',
-        fontSize: '13px',
-        color: '#666666'
+        fontSize: '11px',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: COLORS.TEXT_SECONDARY
       }
     }, ['用户名 *']);
     const usernameInput = createElement('input', {
@@ -461,10 +430,12 @@ class FloatingPanel {
       style: {
         width: '100%',
         padding: '8px 12px',
-        border: '1px solid #E0E0E0',
-        borderRadius: '6px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
         fontSize: '14px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        backgroundColor: COLORS.BG_TERTIARY,
+        color: COLORS.TEXT
       }
     });
     usernameGroup.appendChild(usernameLabel);
@@ -480,8 +451,11 @@ class FloatingPanel {
       style: {
         display: 'block',
         marginBottom: '5px',
-        fontSize: '13px',
-        color: '#666666'
+        fontSize: '11px',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: COLORS.TEXT_SECONDARY
       }
     }, ['账号 *']);
     const accountInput = createElement('input', {
@@ -491,10 +465,12 @@ class FloatingPanel {
       style: {
         width: '100%',
         padding: '8px 12px',
-        border: '1px solid #E0E0E0',
-        borderRadius: '6px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
         fontSize: '14px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        backgroundColor: COLORS.BG_TERTIARY,
+        color: COLORS.TEXT
       }
     });
     accountGroup.appendChild(accountLabel);
@@ -510,8 +486,11 @@ class FloatingPanel {
       style: {
         display: 'block',
         marginBottom: '5px',
-        fontSize: '13px',
-        color: '#666666'
+        fontSize: '11px',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: COLORS.TEXT_SECONDARY
       }
     }, ['密码 *']);
     
@@ -531,10 +510,12 @@ class FloatingPanel {
       style: {
         width: '100%',
         padding: '8px 40px 8px 12px',
-        border: '1px solid #E0E0E0',
-        borderRadius: '6px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
         fontSize: '14px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        backgroundColor: COLORS.BG_TERTIARY,
+        color: COLORS.TEXT
       }
     });
     
@@ -553,8 +534,8 @@ class FloatingPanel {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#666666',
-        borderRadius: '4px',
+        color: COLORS.TEXT_TERTIARY,
+        borderRadius: '6px',
         width: '28px',
         height: '28px',
         transition: 'all 0.2s'
@@ -612,12 +593,12 @@ class FloatingPanel {
     
     // 悬停效果
     passwordToggle.addEventListener('mouseenter', () => {
-      passwordToggle.style.backgroundColor = '#E6EFFB';
-      passwordToggle.style.color = '#333333';
+      passwordToggle.style.backgroundColor = COLORS.BG_ELEVATED;
+      passwordToggle.style.color = COLORS.PRIMARY;
     });
     passwordToggle.addEventListener('mouseleave', () => {
       passwordToggle.style.backgroundColor = 'transparent';
-      passwordToggle.style.color = '#666666';
+      passwordToggle.style.color = COLORS.TEXT_TERTIARY;
     });
     
     passwordWrapper.appendChild(passwordInput);
@@ -636,8 +617,11 @@ class FloatingPanel {
       style: {
         display: 'block',
         marginBottom: '5px',
-        fontSize: '13px',
-        color: '#666666'
+        fontSize: '11px',
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: COLORS.TEXT_SECONDARY
       }
     }, ['备注']);
     const noteInput = createElement('textarea', {
@@ -647,10 +631,12 @@ class FloatingPanel {
       style: {
         width: '100%',
         padding: '8px 12px',
-        border: '1px solid #E0E0E0',
-        borderRadius: '6px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
         fontSize: '14px',
         boxSizing: 'border-box',
+        backgroundColor: COLORS.BG_TERTIARY,
+        color: COLORS.TEXT,
         fontFamily: 'inherit',
         resize: 'vertical',
         minHeight: '60px'
@@ -677,8 +663,9 @@ class FloatingPanel {
         borderRadius: '6px',
         cursor: 'pointer',
         fontSize: '14px',
-        backgroundColor: '#E6EFFB',
-        color: '#333333'
+        backgroundColor: COLORS.BG_TERTIARY,
+        color: COLORS.TEXT_SECONDARY,
+        border: '1px solid rgba(255,255,255,0.1)'
       }
     }, ['取消']);
     cancelBtn.addEventListener('click', () => {
@@ -792,7 +779,8 @@ class FloatingPanel {
         left: '0',
         width: '100%',
         height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(4px)',
         zIndex: PANEL.MODAL_Z_INDEX,
         display: 'flex',
         alignItems: 'center',
@@ -802,18 +790,20 @@ class FloatingPanel {
 
     const formContent = createElement('div', {
       style: {
-        backgroundColor: 'white',
-        padding: '20px',
-        borderRadius: '8px',
+        backgroundColor: COLORS.BG_SECONDARY,
+        padding: '24px',
+        borderRadius: '14px',
         width: '90%',
-        maxWidth: '400px',
+        maxWidth: '380px',
         maxHeight: '80vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(212,160,74,0.1)'
       }
     });
 
     const title = createElement('h3', {
-      style: { margin: '0 0 15px 0', fontSize: '16px', color: '#333333' }
+      style: { margin: '0 0 15px 0', fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '18px', fontWeight: '700', color: COLORS.TEXT }
     }, ['编辑账号']);
 
     const form = createElement('form');
@@ -857,10 +847,12 @@ class FloatingPanel {
       style: {
         width: '100%',
         padding: '8px 12px',
-        border: '1px solid #E0E0E0',
-        borderRadius: '6px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '8px',
         fontSize: '14px',
         boxSizing: 'border-box',
+        backgroundColor: COLORS.BG_TERTIARY,
+        color: COLORS.TEXT,
         fontFamily: 'inherit',
         resize: 'vertical',
         minHeight: '60px'
@@ -1038,123 +1030,46 @@ class FloatingPanel {
   createAccountItem(account) {
     const item = createElement('div', {
       class: 'account-item',
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '8px'
-      }
+      tabindex: '0',
+      role: 'listitem'
     });
-    
-    // 账号信息容器
-    const accountInfoContainer = createElement('div', {
-      style: {
-        flex: '1',
-        minWidth: '0',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2px'
-      }
-    });
-    
-    // 用户名（账号）合并显示
-    const accountInfo = createElement('div', {
-      style: {
-        fontSize: '13px',
-        color: '#333333',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
-      }
-    });
-    
+
+    const accountInfoContainer = createElement('div', { class: 'account-info-container' });
+
+    const accountInfo = createElement('div', { class: 'account-display-text' });
     const username = account.username || '未命名';
     const accountText = account.account || '';
     const displayText = accountText ? `${username}（${accountText}）` : username;
     safeSetTextContent(accountInfo, displayText);
-    
     accountInfoContainer.appendChild(accountInfo);
-    
-    // 备注信息
+
     if (account.note && account.note.trim()) {
-      const accountNote = createElement('div', {
-        style: {
-          fontSize: '11px',
-          color: '#999999',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          lineHeight: '1.3'
-        }
-      });
+      const accountNote = createElement('div', { class: 'account-note-text' });
       safeSetTextContent(accountNote, account.note.trim());
       accountInfoContainer.appendChild(accountNote);
     }
 
-    // 按钮容器
-    const btnContainer = createElement('div', {
-      style: {
-        display: 'flex',
-        gap: '4px',
-        flexShrink: '0',
-        alignItems: 'center'
-      }
-    });
+    const btnContainer = createElement('div', { class: 'btn-container' });
 
     const loginBtn = createElement('button', {
       class: 'login-btn',
       'data-account-id': account.id,
-      tabindex: '0',
-      style: {
-        padding: '4px 12px',
-        backgroundColor: COLORS.PRIMARY,
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '12px',
-        whiteSpace: 'nowrap'
-      }
+      tabindex: '0'
     }, ['登录']);
-
-    loginBtn.addEventListener('click', () => {
-      this.handleLogin(account.id);
-    });
+    loginBtn.addEventListener('click', () => this.handleLogin(account.id));
 
     const editBtn = createElement('button', {
+      class: 'edit-btn',
       tabindex: '0',
-      'aria-label': '编辑账号',
-      style: {
-        padding: '4px 8px',
-        backgroundColor: '#5AC8FA',
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '11px',
-        whiteSpace: 'nowrap'
-      }
+      'aria-label': '编辑账号'
     }, ['编辑']);
-
-    editBtn.addEventListener('click', () => {
-      this.showEditAccountForm(account);
-    });
+    editBtn.addEventListener('click', () => this.showEditAccountForm(account));
 
     const deleteBtn = createElement('button', {
+      class: 'delete-btn',
       tabindex: '0',
-      'aria-label': '删除账号',
-      style: {
-        padding: '4px 8px',
-        backgroundColor: COLORS.ERROR,
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '11px',
-        whiteSpace: 'nowrap'
-      }
+      'aria-label': '删除账号'
     }, ['删除']);
-
     deleteBtn.addEventListener('click', async () => {
       if (confirm('确定要删除此账号吗？')) {
         await this.handleDeleteAccount(account.id);
@@ -1165,9 +1080,6 @@ class FloatingPanel {
     btnContainer.appendChild(editBtn);
     btnContainer.appendChild(deleteBtn);
 
-    // 键盘可访问性：Enter/Space 触发登录
-    item.setAttribute('tabindex', '0');
-    item.setAttribute('role', 'listitem');
     item.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -1177,7 +1089,7 @@ class FloatingPanel {
 
     item.appendChild(accountInfoContainer);
     item.appendChild(btnContainer);
-    
+
     return item;
   }
   
@@ -1338,115 +1250,14 @@ class FloatingPanel {
   
   collapseToCircle() {
     if (!this.panel) return;
-    
-    // 保存当前状态
     this.isCollapsed = true;
-    
-    // 添加折叠类
     this.panel.classList.add('collapsed');
-    
-    // 设置圆形样式
-    const rect = this.panel.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    this.panel.style.width = PANEL.CIRCLE_SIZE;
-    this.panel.style.height = PANEL.CIRCLE_SIZE;
-    this.panel.style.borderRadius = '50%';
-    this.panel.style.left = `${centerX - 25}px`;
-    this.panel.style.top = `${centerY - 25}px`;
-    this.panel.style.right = 'auto';
-    this.panel.style.transition = 'all 0.5s ease-in-out';
-    this.panel.style.overflow = 'hidden';
-    
-    // 隐藏内容，只显示图标
-    const header = this.panel.querySelector('.panel-header');
-    const accountList = this.panel.querySelector('#account-list');
-    const footer = this.panel.querySelector('div:last-child');
-    
-    if (header) header.style.display = 'none';
-    if (accountList) accountList.style.display = 'none';
-    if (footer) footer.style.display = 'none';
-    
-    // 创建圆形图标
-    let circleIcon = this.panel.querySelector('.circle-icon');
-    if (!circleIcon) {
-      circleIcon = createElement('div', {
-        class: 'circle-icon',
-        style: {
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, ' + COLORS.PRIMARY_LIGHT + ' 0%, ' + COLORS.PRIMARY + ' 100%)',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          color: 'white',
-          fontSize: '24px',
-          fontWeight: 'bold',
-          userSelect: 'none',
-          boxShadow: '0 4px 12px rgba(81, 142, 255, 0.4)',
-          transition: 'transform 0.2s'
-        }
-      }, ['✓']);
-      this.panel.appendChild(circleIcon);
-      
-      // 悬停效果
-      circleIcon.addEventListener('mouseenter', () => {
-        circleIcon.style.transform = 'scale(1.1)';
-      });
-      circleIcon.addEventListener('mouseleave', () => {
-        circleIcon.style.transform = 'scale(1)';
-      });
-    }
-    circleIcon.style.display = 'flex';
-    
-    // 点击圆形图标展开
-    circleIcon.onclick = (e) => {
-      e.stopPropagation();
-      this.expandFromCircle();
-    };
-    
-    // 添加提示文字
-    circleIcon.title = '点击展开账号管理器';
   }
   
   expandFromCircle() {
     if (!this.panel) return;
-    
     this.isCollapsed = false;
     this.panel.classList.remove('collapsed');
-    
-    // 恢复原始样式
-    this.panel.style.width = PANEL.WIDTH;
-    this.panel.style.height = 'auto';
-    this.panel.style.borderRadius = '8px';
-    this.panel.style.transition = 'all 0.5s ease-in-out';
-    
-    // 显示内容
-    const header = this.panel.querySelector('.panel-header');
-    const accountList = this.panel.querySelector('#account-list');
-    const footer = this.panel.querySelector('div:last-child');
-    
-    if (header) header.style.display = '';
-    if (accountList) accountList.style.display = '';
-    if (footer) footer.style.display = '';
-    
-    // 隐藏圆形图标
-    const circleIcon = this.panel.querySelector('.circle-icon');
-    if (circleIcon) {
-      circleIcon.style.display = 'none';
-    }
-    
-    // 恢复位置（如果需要）
-    const savedPosition = this.dragger?.loadPosition();
-    if (savedPosition) {
-      // 位置已在 dragger 中处理
-    }
   }
 }
 

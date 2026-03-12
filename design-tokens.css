@@ -1,36 +1,49 @@
 /**
  * 账号管理器 - 统一设计令牌
+ * Guardian 主题：专业安全、沉稳可信
  * 所有 CSS 变量的唯一来源，popup.css 和 panel.css 共用
  */
 
 :root {
-    /* 主色 */
-    --primary-color: #007AFF;
-    --primary-hover: #0051D5;
-    --primary-light: #5AC8FA;
-    --secondary-color: #8E8E93;
-    --success-color: #34C759;
-    --success-hover: #248A3D;
-    --danger-color: #FF3B30;
-    --danger-hover: #D70015;
-    --warning-color: #FF9500;
-    --warning-hover: #C93400;
-    --info-color: #5AC8FA;
-    --info-hover: #0A84FF;
+    /* 主色 - 守护蓝 */
+    --primary-color: #3B7DD8;
+    --primary-hover: #2E6BC4;
+    --primary-light: #6BA0E8;
+    --primary-glow: rgba(59, 125, 216, 0.12);
+    --primary-subtle: rgba(59, 125, 216, 0.06);
+    --secondary-color: #8993A4;
 
-    /* 中性色 */
+    /* 功能色 */
+    --success-color: #34A853;
+    --success-hover: #2D9249;
+    --danger-color: #DC4B4B;
+    --danger-hover: #C43838;
+    --warning-color: #E8A640;
+    --warning-hover: #D49530;
+    --info-color: #3B7DD8;
+    --info-hover: #2E6BC4;
+
+    /* 明亮表面层级 - 冷白清爽 */
+    --bg-base: #F4F6F9;
     --bg-primary: #FFFFFF;
-    --bg-secondary: #F2F2F7;
-    --bg-tertiary: #E5E5EA;
-    --bg-hover: #E8F0FE;
-    --bg-grouped: #F2F2F7;
-    --border-color: #D1D1D6;
-    --border-hover: #007AFF;
-    --separator: rgba(60, 60, 67, 0.12);
-    --text-primary: #000000;
-    --text-secondary: #3C3C43;
-    --text-tertiary: #8E8E93;
-    --text-muted: #C7C7CC;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F0F2F5;
+    --bg-elevated: #E8EBF0;
+    --bg-hover: rgba(59, 125, 216, 0.04);
+    --bg-grouped: #F4F6F9;
+
+    /* 边框 */
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-hover: var(--primary-color);
+    --border-subtle: rgba(0, 0, 0, 0.04);
+    --separator: rgba(0, 0, 0, 0.06);
+
+    /* 文字 */
+    --text-primary: #1A2233;
+    --text-secondary: #5A6577;
+    --text-tertiary: #9AA3B1;
+    --text-muted: #C8CDD6;
+    --text-accent: var(--primary-color);
 
     /* 间距 */
     --spacing-xs: 4px;
@@ -41,25 +54,28 @@
     --spacing-2xl: 32px;
 
     /* 圆角 */
-    --radius-xs: 8px;
-    --radius-sm: 10px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
 
-    /* 阴影 */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    /* 阴影 - 柔和冷调 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-glow: 0 0 20px rgba(59, 125, 216, 0.06);
 
     /* 边框 */
     --border-width: 1px;
 
     /* 动画 */
-    --transition-spring: 400ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-base: 250ms cubic-bezier(0.16, 1, 0.3, 1);
     --transition-fast: 150ms ease-out;
 
     /* 字体 */
-    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    --font-mono: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }

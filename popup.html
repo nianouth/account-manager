@@ -8,23 +8,34 @@
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <!-- 顶部标题 -->
+    <!-- 顶部标题栏 -->
     <header class="app-header">
-        <h1>账号管理器</h1>
+        <div class="header-row">
+            <div class="header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <div class="header-text">
+                <h1>账号管理器</h1>
+                <span class="header-subtitle" id="headerSubtitle"></span>
+            </div>
+        </div>
     </header>
 
-    <!-- Tab 导航 -->
+    <!-- Tab 导航 - 胶囊样式 -->
     <nav class="tab-nav">
         <button class="tab-btn active" data-tab="accounts">
-            <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg></span>
+            <span class="tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg></span>
             <span>账号</span>
         </button>
         <button class="tab-btn" data-tab="sites">
-            <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
+            <span class="tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
             <span>网站</span>
         </button>
         <button class="tab-btn" data-tab="settings">
-            <span class="tab-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
+            <span class="tab-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
             <span>设置</span>
         </button>
     </nav>
@@ -39,16 +50,29 @@
                 </select>
             </div>
             <div class="search-box">
+                <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="searchInput" placeholder="搜索账号..." class="search-input">
+                <button class="search-clear" id="searchClear" type="button" aria-label="清除搜索">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <div class="account-list" id="accountList">
                 <div class="empty-state">
-                    <div class="empty-state-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></div>
-                    <div>请先选择网站</div>
+                    <div class="empty-state-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <div class="empty-state-text">请先选择网站</div>
+                    <div class="empty-state-hint">在上方下拉菜单中选择一个网站</div>
                 </div>
             </div>
             <div class="tab-footer">
-                <button class="btn-primary-large" id="addAccountBtn">+ 添加账号</button>
+                <button class="btn-primary-large" id="addAccountBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    添加账号
+                </button>
             </div>
         </div>
 
@@ -56,7 +80,10 @@
         <div class="tab-pane" id="tab-sites">
             <div class="env-list" id="envList"></div>
             <div class="tab-footer">
-                <button class="btn-primary-large" id="addEnvBtn">+ 添加网站</button>
+                <button class="btn-primary-large" id="addEnvBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    添加网站
+                </button>
             </div>
         </div>
 
@@ -65,46 +92,73 @@
             <div class="settings-section">
                 <h3 class="settings-title">数据管理</h3>
                 <div class="setting-item">
-                    <span class="setting-label">导入数据</span>
+                    <div class="setting-item-left">
+                        <div class="setting-icon setting-icon-import">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </div>
+                        <span class="setting-label">导入数据</span>
+                    </div>
                     <button class="btn-link" id="importBtn">选择文件 ›</button>
                 </div>
                 <div class="setting-item">
-                    <span class="setting-label">导出数据</span>
+                    <div class="setting-item-left">
+                        <div class="setting-icon setting-icon-export">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </div>
+                        <span class="setting-label">导出数据</span>
+                    </div>
                     <button class="btn-link" id="exportBtn">导出 ›</button>
                 </div>
             </div>
             <div class="settings-section">
                 <h3 class="settings-title">关于</h3>
                 <div class="setting-item">
-                    <span class="setting-label">版本</span>
+                    <div class="setting-item-left">
+                        <div class="setting-icon setting-icon-info">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        </div>
+                        <span class="setting-label">版本</span>
+                    </div>
                     <span class="setting-value">v2.1.0</span>
                 </div>
                 <div class="setting-item">
-                    <span class="setting-label">作者</span>
+                    <div class="setting-item-left">
+                        <div class="setting-icon setting-icon-author">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </div>
+                        <span class="setting-label">作者</span>
+                    </div>
                     <span class="setting-value">nianouth</span>
                 </div>
+            </div>
+            <div class="settings-footer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                Account Manager · Made with care
             </div>
             <input type="file" id="importFileInput" accept=".json" style="display: none;">
         </div>
     </main>
-    
+
     <!-- 网站编辑模态框 -->
     <div id="envModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="envModalTitle">添加网站</h2>
+                <button type="button" class="modal-close" id="envModalClose" aria-label="关闭">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <form id="envForm">
                 <div class="form-group">
                     <label for="envName">网站名称 *</label>
-                    <input type="text" id="envName" required>
+                    <input type="text" id="envName" required placeholder="例如：GitHub">
                     <div class="error-message" id="envNameError"></div>
                 </div>
                 <div class="form-group">
                     <label for="envLoginUrl">登录页面URL *</label>
                     <input type="url" id="envLoginUrl" placeholder="https://example.com/login" required>
                     <div class="error-message" id="envLoginUrlError"></div>
-                    <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">悬浮窗只会在匹配此URL的页面显示</small>
+                    <small class="form-hint">悬浮窗只会在匹配此URL的页面显示</small>
                 </div>
                 <button type="button" class="advanced-toggle" id="advancedToggle">
                     <span class="toggle-arrow">▶</span> 高级设置
@@ -114,13 +168,13 @@
                         <label for="envLoginButtonId">登录按钮ID</label>
                         <input type="text" id="envLoginButtonId" placeholder="例如：login_btn">
                         <div class="error-message" id="envLoginButtonIdError"></div>
-                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">留空则自动查找提交按钮</small>
+                        <small class="form-hint">留空则自动查找提交按钮</small>
                     </div>
                     <div class="form-group">
                         <label for="envLoginButtonClass">登录按钮Class</label>
                         <input type="text" id="envLoginButtonClass" placeholder="例如：submit-btn">
                         <div class="error-message" id="envLoginButtonClassError"></div>
-                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">留空则自动查找提交按钮</small>
+                        <small class="form-hint">留空则自动查找提交按钮</small>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -130,34 +184,37 @@
             </form>
         </div>
     </div>
-    
+
     <!-- 账号编辑模态框 -->
     <div id="accountModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="accountModalTitle">添加账号</h2>
+                <button type="button" class="modal-close" id="accountModalClose" aria-label="关闭">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <form id="accountForm">
                 <div class="form-group">
                     <label for="accountUsername">用户名 *</label>
-                    <input type="text" id="accountUsername" required>
+                    <input type="text" id="accountUsername" required placeholder="显示名称">
                     <div class="error-message" id="accountUsernameError"></div>
                 </div>
                 <div class="form-group">
                     <label for="accountAccount">账号 *</label>
-                    <input type="text" id="accountAccount" required>
+                    <input type="text" id="accountAccount" required placeholder="登录用的账号">
                     <div class="error-message" id="accountAccountError"></div>
                 </div>
                 <div class="form-group">
                     <label for="accountPassword">密码 *</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="accountPassword" required>
+                        <input type="password" id="accountPassword" required placeholder="••••••••">
                         <button type="button" class="password-toggle-btn" id="accountPasswordToggle" aria-label="显示/隐藏密码">
-                            <svg class="eye-icon eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg class="eye-icon eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                             </svg>
-                            <svg class="eye-icon eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <svg class="eye-icon eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                                 <line x1="1" y1="1" x2="23" y2="23"></line>
                             </svg>
@@ -177,7 +234,7 @@
             </form>
         </div>
     </div>
-    
+
     <!-- ES6 Module: popup.js 会自动导入其他模块 -->
     <script type="module" src="popup.js"></script>
 </body>

@@ -8,19 +8,19 @@
  */
 const TOAST_COLORS = {
   success: {
-    background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+    background: 'linear-gradient(135deg, #34A853 0%, #2D9249 100%)',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
   },
   error: {
-    background: 'linear-gradient(135deg, #FF3B30 0%, #FF6961 100%)',
+    background: 'linear-gradient(135deg, #DC4B4B 0%, #C43838 100%)',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
   },
   warning: {
-    background: 'linear-gradient(135deg, #FF9500 0%, #FFAC33 100%)',
+    background: 'linear-gradient(135deg, #E8A640 0%, #D49530 100%)',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
   },
   info: {
-    background: 'linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%)',
+    background: 'linear-gradient(135deg, #3B7DD8 0%, #2E6BC4 100%)',
     icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
   }
 };
@@ -88,8 +88,8 @@ export function showToast(message, type = 'success', duration = 2000) {
     background: ${config.background};
     color: white;
     padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     z-index: 10000;
     font-size: 14px;
     font-weight: 500;

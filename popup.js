@@ -190,9 +190,22 @@ class AccountManager {
     
     // 搜索框
     const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
     searchInput?.addEventListener('input', (e) => {
       this.searchTerm = e.target.value.toLowerCase();
       this.loadAccounts(this.currentEnvId);
+      if (searchClear) {
+        searchClear.classList.toggle('visible', e.target.value.length > 0);
+      }
+    });
+    searchClear?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        this.searchTerm = '';
+        this.loadAccounts(this.currentEnvId);
+        searchClear.classList.remove('visible');
+        searchInput.focus();
+      }
     });
     
     // 网站表单
@@ -217,13 +230,21 @@ class AccountManager {
       content.classList.toggle('expanded');
     });
 
-    // 取消按钮
+    // 取消按钮 & 关闭按钮
     document.getElementById('envCancelBtn')?.addEventListener('click', () => {
       this.envModal.close();
       this.resetEnvForm();
     });
-    
+    document.getElementById('envModalClose')?.addEventListener('click', () => {
+      this.envModal.close();
+      this.resetEnvForm();
+    });
+
     document.getElementById('accountCancelBtn')?.addEventListener('click', () => {
+      this.accountModal.close();
+      this.resetAccountForm();
+    });
+    document.getElementById('accountModalClose')?.addEventListener('click', () => {
       this.accountModal.close();
       this.resetAccountForm();
     });
@@ -282,8 +303,10 @@ class AccountManager {
   
   async loadEnvironments() {
     try {
-      const result = await chrome.storage.local.get('environments');
+      const result = await chrome.storage.local.get(['environments', 'accounts']);
       const environments = result.environments || [];
+      const accounts = result.accounts || [];
+      this.updateHeaderStats(environments.length, accounts.length);
       const envSelect = document.getElementById('envSelect');
 
       if (!envSelect) return;
@@ -356,22 +379,34 @@ class AccountManager {
     const envList = document.getElementById('envList');
     if (!envList) return;
 
-    chrome.storage.local.get('environments', (result) => {
+    chrome.storage.local.get(['environments', 'accounts'], (result) => {
       const environments = result.environments || [];
+      const accounts = result.accounts || [];
       envList.innerHTML = '';
 
       if (environments.length === 0) {
         envList.innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">${SVG_ICONS.globe}</div>
-            <div>还没有添加网站</div>
+            <div class="empty-state-text">还没有添加网站</div>
+            <div class="empty-state-hint">点击下方按钮添加第一个网站</div>
           </div>`;
         return;
       }
 
+      // 更新标题栏统计
+      this.updateHeaderStats(environments.length, accounts.length);
+
       environments.forEach(env => {
         const item = document.createElement('div');
         item.className = `env-item${env.id === this.currentEnvId ? ' active' : ''}`;
+        item.dataset.envId = env.id;
+
+        // 头像
+        const avatar = document.createElement('div');
+        avatar.className = 'env-avatar';
+        avatar.textContent = (env.name || '?').charAt(0).toUpperCase();
+        item.appendChild(avatar);
 
         const info = createElement('div', { className: 'env-info' });
         const nameEl = createElement('div', { className: 'env-name' });
@@ -380,14 +415,22 @@ class AccountManager {
         safeSetTextContent(domainEl, env.loginUrl || '');
         info.appendChild(nameEl);
         info.appendChild(domainEl);
+        item.appendChild(info);
+
+        // 账号数量标记
+        const envAccountCount = accounts.filter(a => a.envId === env.id).length;
+        if (envAccountCount > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'env-badge';
+          badge.textContent = envAccountCount;
+          item.appendChild(badge);
+        }
 
         const actions = document.createElement('div');
         actions.className = 'env-actions';
         actions.innerHTML = `
-          <button class="btn-edit" title="编辑">${SVG_ICONS.edit}</button>
-          <button class="btn-delete" title="删除">${SVG_ICONS.trash}</button>`;
-
-        item.appendChild(info);
+          <button class="btn-edit" title="编辑"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+          <button class="btn-delete" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
         item.appendChild(actions);
 
         // 点击选择网站并切换到账号 Tab
@@ -444,11 +487,8 @@ class AccountManager {
       accountList.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">${SVG_ICONS.globe}</div>
-          <h3 class="empty-state-title">未选择网站</h3>
-          <p class="empty-state-description">请在上方选择一个网站，或者创建一个新的网站</p>
-          <div class="empty-state-action">
-            <button onclick="document.getElementById('addEnvBtn').click()">${SVG_ICONS.plus} 创建网站</button>
-          </div>
+          <div class="empty-state-text">请先选择网站</div>
+          <div class="empty-state-hint">在上方下拉菜单中选择一个网站</div>
         </div>
       `;
       return;
@@ -479,19 +519,16 @@ class AccountManager {
           accountList.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">${SVG_ICONS.search}</div>
-              <h3 class="empty-state-title">未找到账号</h3>
-              <p class="empty-state-description">没有找到匹配"${this.searchTerm}"的账号</p>
+              <div class="empty-state-text">未找到账号</div>
+              <div class="empty-state-hint">没有匹配"${this.searchTerm}"的结果</div>
             </div>
           `;
         } else {
           accountList.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">${SVG_ICONS.notepad}</div>
-              <h3 class="empty-state-title">还没有账号</h3>
-              <p class="empty-state-description">点击下方按钮添加您的第一个账号</p>
-              <div class="empty-state-action">
-                <button onclick="document.getElementById('addAccountBtn').click()">${SVG_ICONS.plus} 添加账号</button>
-              </div>
+              <div class="empty-state-text">还没有账号</div>
+              <div class="empty-state-hint">点击下方按钮添加第一个账号</div>
             </div>
           `;
         }
@@ -499,8 +536,8 @@ class AccountManager {
       }
       
       accountList.innerHTML = '';
-      envAccounts.forEach(account => {
-        const accountItem = this.createAccountItem(account);
+      envAccounts.forEach((account, index) => {
+        const accountItem = this.createAccountItem(account, index);
         accountList.appendChild(accountItem);
       });
     } catch (error) {
@@ -514,18 +551,19 @@ class AccountManager {
     }
   }
   
-  createAccountItem(account) {
+  createAccountItem(account, index = 0) {
     const item = document.createElement('div');
     item.className = 'account-item';
+    item.style.setProperty('--i', index);
 
-    // 收藏按钮
+    // 上层：收藏 + 信息
+    const top = document.createElement('div');
+    top.className = 'account-item-top';
+
     const favoriteBtn = document.createElement('button');
     favoriteBtn.className = 'btn-favorite';
     favoriteBtn.innerHTML = account.favorite ? SVG_ICONS.starFilled : SVG_ICONS.starEmpty;
     favoriteBtn.title = account.favorite ? '取消收藏' : '收藏';
-    if (account.favorite) {
-      favoriteBtn.classList.add('active');
-    }
     favoriteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleFavorite(account.id);
@@ -533,108 +571,90 @@ class AccountManager {
 
     const accountInfo = document.createElement('div');
     accountInfo.className = 'account-info';
-    accountInfo.style.flex = '1';
-    accountInfo.style.minWidth = '0';
-
-    // 用户名行
-    const usernameRow = document.createElement('div');
-    usernameRow.style.display = 'flex';
-    usernameRow.style.alignItems = 'center';
-    usernameRow.style.marginBottom = '4px';
 
     const username = document.createElement('div');
     username.className = 'username';
-    username.style.marginBottom = '0';
     safeSetTextContent(username, account.username || '未命名');
-    usernameRow.appendChild(username);
+    accountInfo.appendChild(username);
 
-    accountInfo.appendChild(usernameRow);
+    const accountText = document.createElement('div');
+    accountText.className = 'account-text';
+    safeSetTextContent(accountText, account.account || '');
+    accountInfo.appendChild(accountText);
 
-    // 账号行（带复制按钮）
-    const accountRow = document.createElement('div');
-    accountRow.className = 'account-info-row';
+    top.appendChild(favoriteBtn);
+    top.appendChild(accountInfo);
+    item.appendChild(top);
 
-    const accountLabel = document.createElement('span');
-    accountLabel.className = 'account-info-label';
-    accountLabel.textContent = '账号:';
+    // 下层：备注/复制 + 操作按钮
+    const bottom = document.createElement('div');
+    bottom.className = 'account-item-bottom';
 
-    const accountValue = document.createElement('span');
-    accountValue.className = 'account-info-value';
-    safeSetTextContent(accountValue, account.account || '');
+    // 左侧：备注或复制按钮
+    const bottomLeft = document.createElement('div');
+    bottomLeft.style.cssText = 'display:flex;align-items:center;gap:4px;flex:1;min-width:0';
 
-    const copyAccountBtn = document.createElement('button');
-    copyAccountBtn.className = 'btn-copy';
-    copyAccountBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-    copyAccountBtn.title = '复制账号';
-    copyAccountBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.copyToClipboard(account.account || '', '账号已复制');
-    });
-
-    accountRow.appendChild(accountLabel);
-    accountRow.appendChild(accountValue);
-    accountRow.appendChild(copyAccountBtn);
-    accountInfo.appendChild(accountRow);
-
-    // 密码行（带复制按钮）
-    const passwordRow = document.createElement('div');
-    passwordRow.className = 'account-info-row';
-
-    const passwordLabel = document.createElement('span');
-    passwordLabel.className = 'account-info-label';
-    passwordLabel.textContent = '密码:';
-
-    const passwordValue = document.createElement('span');
-    passwordValue.className = 'account-info-value';
-    passwordValue.textContent = '••••••••';
-
-    const copyPasswordBtn = document.createElement('button');
-    copyPasswordBtn.className = 'btn-copy';
-    copyPasswordBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-    copyPasswordBtn.title = '复制密码';
-    copyPasswordBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      this.copyToClipboard(account.password || '', '密码已复制');
-    });
-
-    passwordRow.appendChild(passwordLabel);
-    passwordRow.appendChild(passwordValue);
-    passwordRow.appendChild(copyPasswordBtn);
-    accountInfo.appendChild(passwordRow);
-
-    // 备注信息
     if (account.note && account.note.trim()) {
       const accountNote = document.createElement('div');
       accountNote.className = 'account-note';
       safeSetTextContent(accountNote, account.note.trim());
-      accountInfo.appendChild(accountNote);
+      bottomLeft.appendChild(accountNote);
+    } else {
+      // 复制按钮组
+      const copyAccountBtn = document.createElement('button');
+      copyAccountBtn.className = 'btn-copy';
+      copyAccountBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+      copyAccountBtn.title = '复制账号';
+      copyAccountBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.copyToClipboard(account.account || '', '账号已复制');
+      });
+
+      const copyPasswordBtn = document.createElement('button');
+      copyPasswordBtn.className = 'btn-copy';
+      copyPasswordBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+      copyPasswordBtn.title = '复制密码';
+      copyPasswordBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.copyToClipboard(account.password || '', '密码已复制');
+      });
+
+      bottomLeft.appendChild(copyAccountBtn);
+      bottomLeft.appendChild(copyPasswordBtn);
     }
 
+    // 右侧：操作按钮
     const accountActions = document.createElement('div');
     accountActions.className = 'account-actions';
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-edit';
-    editBtn.textContent = '编辑';
-    editBtn.addEventListener('click', () => {
-      this.openAccountModal(account.id);
-    });
+    editBtn.title = '编辑';
+    editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    editBtn.addEventListener('click', () => this.openAccountModal(account.id));
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-delete';
-    deleteBtn.textContent = '删除';
-    deleteBtn.addEventListener('click', () => {
-      this.handleDeleteAccount(account.id);
-    });
+    deleteBtn.title = '删除';
+    deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+    deleteBtn.addEventListener('click', () => this.handleDeleteAccount(account.id));
 
     accountActions.appendChild(editBtn);
     accountActions.appendChild(deleteBtn);
 
-    item.appendChild(favoriteBtn);
-    item.appendChild(accountInfo);
-    item.appendChild(accountActions);
+    bottom.appendChild(bottomLeft);
+    bottom.appendChild(accountActions);
+    item.appendChild(bottom);
 
     return item;
+  }
+
+  // 更新标题栏统计
+  updateHeaderStats(envCount, accountCount) {
+    const subtitle = document.getElementById('headerSubtitle');
+    if (subtitle) {
+      subtitle.textContent = `${envCount} 个网站 · ${accountCount} 个账号`;
+    }
   }
 
   // 复制到剪贴板
