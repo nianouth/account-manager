@@ -94,6 +94,11 @@ class AccountManager {
     this.searchDebounceTimer = null;
     this.envModal = new ModalManager('envModal');
     this.accountModal = new ModalManager('accountModal');
+    this.groupModal = new ModalManager('groupModal');
+    this.groupAccountModal = new ModalManager('groupAccountModal');
+    this.currentGroupId = null;
+    this.currentGroupIdForEdit = null;
+    this.currentGroupAccountId = null;
     this.currentTab = 'accounts';
     this.init();
   }
@@ -137,6 +142,9 @@ class AccountManager {
     if (tabName === 'sites') {
       this.renderEnvironmentList();
     }
+    if (tabName === 'templates') {
+      this.renderGroupList();
+    }
   }
   
   setupEventListeners() {
@@ -160,11 +168,16 @@ class AccountManager {
 
       // Esc: 关闭模态框
       if (e.key === 'Escape') {
-        if (this.envModal.isOpen) {
+        if (this.groupAccountModal.isOpen) {
+          this.groupAccountModal.close();
+          this.resetGroupAccountForm();
+        } else if (this.groupModal.isOpen) {
+          this.groupModal.close();
+          this.resetGroupForm();
+        } else if (this.envModal.isOpen) {
           this.envModal.close();
           this.resetEnvForm();
-        }
-        if (this.accountModal.isOpen) {
+        } else if (this.accountModal.isOpen) {
           this.accountModal.close();
           this.resetAccountForm();
         }
@@ -308,14 +321,71 @@ class AccountManager {
         e.target.value = '';
       }
     });
+
+    // ===== 账号模板相关 =====
+    document.getElementById('addGroupBtn')?.addEventListener('click', () => {
+      this.openGroupModal();
+    });
+
+    // 模板表单
+    document.getElementById('groupForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleGroupSubmit();
+    });
+    document.getElementById('groupCancelBtn')?.addEventListener('click', () => {
+      this.groupModal.close();
+      this.resetGroupForm();
+    });
+    document.getElementById('groupModalClose')?.addEventListener('click', () => {
+      this.groupModal.close();
+      this.resetGroupForm();
+    });
+    this.groupModal.modal?.addEventListener('click', (e) => {
+      if (e.target === this.groupModal.modal) {
+        this.groupModal.close();
+        this.resetGroupForm();
+      }
+    });
+
+    // 模板账号表单
+    document.getElementById('groupAccountForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleGroupAccountSubmit();
+    });
+    document.getElementById('groupAccountCancelBtn')?.addEventListener('click', () => {
+      this.groupAccountModal.close();
+      this.resetGroupAccountForm();
+    });
+    document.getElementById('groupAccountModalClose')?.addEventListener('click', () => {
+      this.groupAccountModal.close();
+      this.resetGroupAccountForm();
+    });
+    this.groupAccountModal.modal?.addEventListener('click', (e) => {
+      if (e.target === this.groupAccountModal.modal) {
+        this.groupAccountModal.close();
+        this.resetGroupAccountForm();
+      }
+    });
+
+    // 模板账号密码显示/隐藏
+    const groupPasswordToggle = document.getElementById('groupAccountPasswordToggle');
+    const groupPasswordInput = document.getElementById('groupAccountPassword');
+    if (groupPasswordToggle && groupPasswordInput) {
+      groupPasswordToggle.addEventListener('click', () => {
+        const isPassword = groupPasswordInput.type === 'password';
+        groupPasswordInput.type = isPassword ? 'text' : 'password';
+        groupPasswordToggle.classList.toggle('show-password', isPassword);
+      });
+    }
   }
   
   async loadEnvironments() {
     try {
-      const result = await chrome.storage.local.get(['environments', 'accounts']);
+      const result = await chrome.storage.local.get(['environments', 'accounts', 'accountGroups']);
       const environments = result.environments || [];
       const accounts = result.accounts || [];
-      this.updateHeaderStats(environments.length, accounts.length);
+      const accountGroups = result.accountGroups || [];
+      this.updateHeaderStats(environments.length, accounts.length, accountGroups.length);
       const envSelect = document.getElementById('envSelect');
 
       if (!envSelect) return;
@@ -388,9 +458,10 @@ class AccountManager {
     const envList = document.getElementById('envList');
     if (!envList) return;
 
-    chrome.storage.local.get(['environments', 'accounts'], (result) => {
+    chrome.storage.local.get(['environments', 'accounts', 'accountGroups'], (result) => {
       const environments = result.environments || [];
       const accounts = result.accounts || [];
+      const accountGroups = result.accountGroups || [];
       envList.innerHTML = '';
 
       if (environments.length === 0) {
@@ -410,7 +481,7 @@ class AccountManager {
       }
 
       // 更新标题栏统计
-      this.updateHeaderStats(environments.length, accounts.length);
+      this.updateHeaderStats(environments.length, accounts.length, accountGroups.length);
 
       environments.forEach(env => {
         const item = document.createElement('div');
@@ -432,12 +503,28 @@ class AccountManager {
         info.appendChild(domainEl);
         item.appendChild(info);
 
+        // 关联模板标记
+        if (env.linkedGroupId) {
+          const linkedGroup = accountGroups.find(g => g.id === env.linkedGroupId);
+          if (linkedGroup) {
+            const sharedBadge = document.createElement('span');
+            sharedBadge.className = 'shared-badge';
+            sharedBadge.textContent = linkedGroup.name;
+            sharedBadge.title = `关联模板：${linkedGroup.name}`;
+            item.appendChild(sharedBadge);
+          }
+        }
+
         // 账号数量标记
         const envAccountCount = accounts.filter(a => a.envId === env.id).length;
-        if (envAccountCount > 0) {
+        const groupAccountCount = env.linkedGroupId
+          ? (accountGroups.find(g => g.id === env.linkedGroupId)?.accounts?.length || 0)
+          : 0;
+        const totalCount = envAccountCount + groupAccountCount;
+        if (totalCount > 0) {
           const badge = document.createElement('span');
           badge.className = 'env-badge';
-          badge.textContent = envAccountCount;
+          badge.textContent = totalCount;
           item.appendChild(badge);
         }
 
@@ -510,9 +597,26 @@ class AccountManager {
     }
     
     try {
-      const result = await chrome.storage.local.get('accounts');
+      const result = await chrome.storage.local.get(['accounts', 'environments', 'accountGroups']);
       const accounts = result.accounts || [];
+      const environments = result.environments || [];
+      const groups = result.accountGroups || [];
+
       let envAccounts = accounts.filter(account => account.envId === envId);
+
+      // 加载关联的账号模板
+      const currentEnv = environments.find(e => e.id === envId);
+      if (currentEnv?.linkedGroupId) {
+        const linkedGroup = groups.find(g => g.id === currentEnv.linkedGroupId);
+        if (linkedGroup?.accounts?.length > 0) {
+          const sharedAccounts = linkedGroup.accounts.map(acc => ({
+            ...acc,
+            _isShared: true,
+            _groupName: linkedGroup.name
+          }));
+          envAccounts = [...envAccounts, ...sharedAccounts];
+        }
+      }
 
       // 搜索过滤
       if (this.searchTerm) {
@@ -583,12 +687,18 @@ class AccountManager {
 
     const favoriteBtn = document.createElement('button');
     favoriteBtn.className = 'btn-favorite';
-    favoriteBtn.innerHTML = account.favorite ? SVG_ICONS.starFilled : SVG_ICONS.starEmpty;
-    favoriteBtn.title = account.favorite ? '取消收藏' : '收藏';
-    favoriteBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleFavorite(account.id);
-    });
+    if (account._isShared) {
+      favoriteBtn.innerHTML = SVG_ICONS.starEmpty;
+      favoriteBtn.style.opacity = '0.3';
+      favoriteBtn.style.pointerEvents = 'none';
+    } else {
+      favoriteBtn.innerHTML = account.favorite ? SVG_ICONS.starFilled : SVG_ICONS.starEmpty;
+      favoriteBtn.title = account.favorite ? '取消收藏' : '收藏';
+      favoriteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFavorite(account.id);
+      });
+    }
 
     const accountInfo = document.createElement('div');
     accountInfo.className = 'account-info';
@@ -609,6 +719,16 @@ class AccountManager {
 
     top.appendChild(favoriteBtn);
     top.appendChild(accountInfo);
+
+    // 共享账号标记
+    if (account._isShared) {
+      const badge = document.createElement('span');
+      badge.className = 'shared-badge';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
+      badge.appendChild(document.createTextNode(account._groupName || '模板'));
+      badge.title = `来自模板「${account._groupName || ''}」`;
+      top.appendChild(badge);
+    }
     item.appendChild(top);
 
     // 下层：备注/复制 + 操作按钮
@@ -654,20 +774,32 @@ class AccountManager {
     const accountActions = document.createElement('div');
     accountActions.className = 'account-actions';
 
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn-edit';
-    editBtn.title = '编辑';
-    editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-    editBtn.addEventListener('click', () => this.openAccountModal(account.id));
+    if (account._isShared) {
+      // 共享账号：只显示提示，不显示编辑/删除
+      const hintBtn = document.createElement('button');
+      hintBtn.className = 'btn-edit';
+      hintBtn.title = '请到「模板」页面编辑此账号';
+      hintBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+      hintBtn.addEventListener('click', () => {
+        showInfoMessage('请到「模板」页面编辑此账号');
+      });
+      accountActions.appendChild(hintBtn);
+    } else {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-edit';
+      editBtn.title = '编辑';
+      editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+      editBtn.addEventListener('click', () => this.openAccountModal(account.id));
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-delete';
-    deleteBtn.title = '删除';
-    deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
-    deleteBtn.addEventListener('click', () => this.handleDeleteAccount(account.id));
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn-delete';
+      deleteBtn.title = '删除';
+      deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+      deleteBtn.addEventListener('click', () => this.handleDeleteAccount(account.id));
 
-    accountActions.appendChild(editBtn);
-    accountActions.appendChild(deleteBtn);
+      accountActions.appendChild(editBtn);
+      accountActions.appendChild(deleteBtn);
+    }
 
     bottom.appendChild(bottomLeft);
     bottom.appendChild(accountActions);
@@ -677,10 +809,12 @@ class AccountManager {
   }
 
   // 更新标题栏统计
-  updateHeaderStats(envCount, accountCount) {
+  updateHeaderStats(envCount, accountCount, groupCount = 0) {
     const subtitle = document.getElementById('headerSubtitle');
     if (subtitle) {
-      subtitle.textContent = `${envCount} 个网站 · ${accountCount} 个账号`;
+      let text = `${envCount} 个网站 · ${accountCount} 个账号`;
+      if (groupCount > 0) text += ` · ${groupCount} 个模板`;
+      subtitle.textContent = text;
     }
   }
 
@@ -862,9 +996,12 @@ class AccountManager {
     if (title) {
       title.textContent = envId ? '编辑网站' : '添加网站';
     }
-    
+
     this.currentEnvIdForEdit = envId;
-    
+
+    // 加载账号模板选择器
+    this.populateGroupSelector(envId);
+
     if (envId) {
       // 编辑模式：加载网站数据
       chrome.storage.local.get('environments', (result) => {
@@ -875,6 +1012,7 @@ class AccountManager {
           document.getElementById('envLoginUrl').value = env.loginUrl || '';
           document.getElementById('envLoginButtonId').value = env.loginButtonId || 'ch_login_btn';
           document.getElementById('envLoginButtonClass').value = env.loginButtonClass || 'formBtn';
+          document.getElementById('envLinkedGroup').value = env.linkedGroupId || '';
           // 如果有自定义按钮配置，自动展开高级设置
           const hasCustomButton = (env.loginButtonId && env.loginButtonId !== 'ch_login_btn') ||
                                   (env.loginButtonClass && env.loginButtonClass !== 'formBtn');
@@ -887,6 +1025,8 @@ class AccountManager {
     } else {
       // 添加模式：清空表单，并自动读取当前页签信息
       this.resetEnvForm();
+      // 重新加载模板选择器（resetEnvForm 会清空）
+      this.populateGroupSelector(null);
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tab = tabs[0];
         if (tab) {
@@ -901,6 +1041,24 @@ class AccountManager {
     }
 
     this.envModal.open();
+  }
+
+  async populateGroupSelector(envId) {
+    const select = document.getElementById('envLinkedGroup');
+    if (!select) return;
+
+    const result = await chrome.storage.local.get('accountGroups');
+    const groups = result.accountGroups || [];
+
+    // 清空并重建选项
+    select.innerHTML = '<option value="">不使用模板</option>';
+    groups.forEach(group => {
+      const option = document.createElement('option');
+      option.value = group.id;
+      const count = (group.accounts || []).length;
+      option.textContent = `${group.name} (${count} 个账号)`;
+      select.appendChild(option);
+    });
   }
   
   async handleDeleteEnv(envId) {
@@ -1029,6 +1187,7 @@ class AccountManager {
     const loginUrl = document.getElementById('envLoginUrl').value.trim();
     const loginButtonId = document.getElementById('envLoginButtonId').value.trim() || 'ch_login_btn';
     const loginButtonClass = document.getElementById('envLoginButtonClass').value.trim() || 'formBtn';
+    const linkedGroupId = document.getElementById('envLinkedGroup').value || '';
     
     // 验证
     let isValid = true;
@@ -1072,6 +1231,7 @@ class AccountManager {
             loginUrl: loginUrl,
             loginButtonId: loginButtonId,
             loginButtonClass: loginButtonClass,
+            linkedGroupId: linkedGroupId || undefined,
             updatedAt: Date.now()
           };
           await chrome.storage.local.set({ environments });
@@ -1099,6 +1259,7 @@ class AccountManager {
           loginUrl: loginUrl,
           loginButtonId: loginButtonId,
           loginButtonClass: loginButtonClass,
+          linkedGroupId: linkedGroupId || undefined,
           createdAt: Date.now()
         };
         environments.push(newEnv);
@@ -1274,9 +1435,10 @@ class AccountManager {
       const confirmed = await showConfirm('导出数据', '导出的文件包含账号密码数据。请注意：\n\n1. 请妥善保管此文件，不要分享给他人\n2. 不要通过不安全的渠道传输\n3. 使用后请及时删除', { confirmText: '导出' });
       if (!confirmed) return;
 
-      const result = await chrome.storage.local.get(['environments', 'accounts']);
+      const result = await chrome.storage.local.get(['environments', 'accounts', 'accountGroups']);
       const environments = result.environments || [];
       const accounts = result.accounts || [];
+      const accountGroups = result.accountGroups || [];
 
       const dateStr = new Date().toISOString().split('T')[0];
 
@@ -1310,7 +1472,8 @@ class AccountManager {
           version: '2.0',
           exportTime: new Date().toISOString(),
           environments: environments,
-          accounts: accounts
+          accounts: accounts,
+          accountGroups: accountGroups
         };
 
         const jsonString = JSON.stringify(exportData, null, 2);
@@ -1361,7 +1524,8 @@ class AccountManager {
       // 确认导入
       const envCount = importData.environments?.length || 0;
       const accountCount = importData.accounts?.length || 0;
-      const confirmMsg = `即将导入 ${envCount} 个网站和 ${accountCount} 个账号。\n\n注意：导入会合并现有数据，相同ID的项目会被覆盖。`;
+      const groupCount = importData.accountGroups?.length || 0;
+      const confirmMsg = `即将导入 ${envCount} 个网站、${accountCount} 个账号${groupCount > 0 ? `、${groupCount} 个模板` : ''}。\n\n注意：导入会合并现有数据，相同ID的项目会被覆盖。`;
       const importConfirmed = await showConfirm('导入数据', confirmMsg, { confirmText: '导入' });
       if (!importConfirmed) return;
       
@@ -1428,13 +1592,357 @@ class AccountManager {
     return { valid: true };
   }
   
+  // ===== 账号模板 CRUD =====
+
+  async renderGroupList() {
+    const groupList = document.getElementById('groupList');
+    if (!groupList) return;
+
+    const result = await chrome.storage.local.get(['accountGroups', 'environments']);
+    const groups = result.accountGroups || [];
+    const environments = result.environments || [];
+    groupList.innerHTML = '';
+
+    if (groups.length === 0) {
+      groupList.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <div class="empty-state-text">还没有账号模板</div>
+          <div class="empty-state-hint">创建模板后可关联到多个网站，共享同一套账号</div>
+          <button class="empty-state-cta" id="emptyAddGroupBtn">
+            ${SVG_ICONS.plus} 新建模板
+          </button>
+        </div>`;
+      document.getElementById('emptyAddGroupBtn')?.addEventListener('click', () => {
+        this.openGroupModal();
+      });
+      return;
+    }
+
+    groups.forEach(group => {
+      const card = document.createElement('div');
+      card.className = 'group-card';
+
+      // 计算关联的网站数
+      const linkedEnvCount = environments.filter(e => e.linkedGroupId === group.id).length;
+      const accountCount = (group.accounts || []).length;
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'group-card-header';
+      header.innerHTML = `
+        <div class="group-avatar">${(group.name || '?').charAt(0).toUpperCase()}</div>
+        <div class="group-info">
+          <div class="group-name"></div>
+          <div class="group-meta">${accountCount} 个账号 · ${linkedEnvCount} 个网站使用</div>
+        </div>
+        ${accountCount > 0 ? `<span class="group-badge">${accountCount}</span>` : ''}
+        <div class="group-actions">
+          <button class="btn-edit" title="编辑名称"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+          <button class="btn-delete" title="删除"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+        </div>`;
+
+      // Set name safely
+      const nameEl = header.querySelector('.group-name');
+      safeSetTextContent(nameEl, group.name || '未命名模板');
+
+      header.querySelector('.btn-edit').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openGroupModal(group.id);
+      });
+      header.querySelector('.btn-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handleDeleteGroup(group.id);
+      });
+
+      card.appendChild(header);
+
+      // Accounts section
+      const accountsSection = document.createElement('div');
+      accountsSection.className = 'group-accounts';
+
+      (group.accounts || []).forEach(acc => {
+        const item = document.createElement('div');
+        item.className = 'group-account-item';
+        item.innerHTML = `
+          <div class="group-account-info">
+            <div class="username"></div>
+            <div class="account-text"></div>
+          </div>
+          <div class="group-account-actions">
+            <button class="btn-edit" title="编辑"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+            <button class="btn-delete" title="删除"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+          </div>`;
+
+        safeSetTextContent(item.querySelector('.username'), acc.username || '未命名');
+        safeSetTextContent(item.querySelector('.account-text'), acc.account || '');
+
+        item.querySelector('.btn-edit').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openGroupAccountModal(group.id, acc.id);
+        });
+        item.querySelector('.btn-delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.handleDeleteGroupAccount(group.id, acc.id);
+        });
+
+        accountsSection.appendChild(item);
+      });
+
+      // Add account button
+      const addBtn = document.createElement('button');
+      addBtn.className = 'group-add-account-btn';
+      addBtn.innerHTML = `${SVG_ICONS.plus} 添加账号`;
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openGroupAccountModal(group.id);
+      });
+      accountsSection.appendChild(addBtn);
+
+      card.appendChild(accountsSection);
+      groupList.appendChild(card);
+    });
+  }
+
+  openGroupModal(groupId = null) {
+    const title = document.getElementById('groupModalTitle');
+    if (title) {
+      title.textContent = groupId ? '编辑账号模板' : '新建账号模板';
+    }
+    this.currentGroupIdForEdit = groupId;
+
+    if (groupId) {
+      chrome.storage.local.get('accountGroups', (result) => {
+        const groups = result.accountGroups || [];
+        const group = groups.find(g => g.id === groupId);
+        if (group) {
+          document.getElementById('groupName').value = group.name || '';
+        }
+      });
+    } else {
+      this.resetGroupForm();
+    }
+    this.groupModal.open();
+  }
+
+  resetGroupForm() {
+    document.getElementById('groupForm')?.reset();
+    hideError('groupNameError');
+    this.currentGroupIdForEdit = null;
+  }
+
+  async handleGroupSubmit() {
+    const name = document.getElementById('groupName').value.trim();
+    hideError('groupNameError');
+
+    if (!name) {
+      showError('groupNameError', '模板名称不能为空');
+      return;
+    }
+
+    try {
+      const result = await chrome.storage.local.get('accountGroups');
+      const groups = result.accountGroups || [];
+
+      if (this.currentGroupIdForEdit) {
+        const index = groups.findIndex(g => g.id === this.currentGroupIdForEdit);
+        if (index !== -1) {
+          groups[index].name = name;
+          groups[index].updatedAt = Date.now();
+        }
+      } else {
+        groups.push({
+          id: Date.now().toString(),
+          name,
+          accounts: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+
+      await chrome.storage.local.set({ accountGroups: groups });
+      this.groupModal.close();
+      this.resetGroupForm();
+      this.renderGroupList();
+      showSuccessMessage(this.currentGroupIdForEdit ? '模板更新成功' : '模板创建成功');
+    } catch (error) {
+      console.error('保存模板失败:', error);
+      showErrorMessage('保存失败: ' + error.message);
+    }
+  }
+
+  async handleDeleteGroup(groupId) {
+    const result = await chrome.storage.local.get(['accountGroups', 'environments']);
+    const groups = result.accountGroups || [];
+    const environments = result.environments || [];
+    const group = groups.find(g => g.id === groupId);
+    const linkedEnvs = environments.filter(e => e.linkedGroupId === groupId);
+
+    let msg = '确定要删除这个账号模板吗？';
+    if (linkedEnvs.length > 0) {
+      msg = `该模板被 ${linkedEnvs.length} 个网站使用中，删除后这些网站将不再显示模板账号。`;
+    }
+
+    const confirmed = await showConfirm('删除模板', msg, { confirmText: '删除', dangerous: true });
+    if (!confirmed) return;
+
+    try {
+      const filtered = groups.filter(g => g.id !== groupId);
+      // 清除关联
+      const updatedEnvs = environments.map(e => {
+        if (e.linkedGroupId === groupId) {
+          const { linkedGroupId, ...rest } = e;
+          return rest;
+        }
+        return e;
+      });
+
+      await chrome.storage.local.set({ accountGroups: filtered, environments: updatedEnvs });
+      this.renderGroupList();
+      showSuccessMessage('模板已删除');
+    } catch (error) {
+      console.error('删除模板失败:', error);
+      showErrorMessage('删除失败: ' + error.message);
+    }
+  }
+
+  openGroupAccountModal(groupId, accountId = null) {
+    this.currentGroupId = groupId;
+    this.currentGroupAccountId = accountId;
+
+    const title = document.getElementById('groupAccountModalTitle');
+    if (title) {
+      title.textContent = accountId ? '编辑模板账号' : '添加模板账号';
+    }
+
+    this.resetGroupAccountForm();
+
+    if (accountId) {
+      chrome.storage.local.get('accountGroups', (result) => {
+        const groups = result.accountGroups || [];
+        const group = groups.find(g => g.id === groupId);
+        if (group) {
+          const acc = (group.accounts || []).find(a => a.id === accountId);
+          if (acc) {
+            document.getElementById('groupAccountUsername').value = acc.username || '';
+            document.getElementById('groupAccountAccount').value = acc.account || '';
+            document.getElementById('groupAccountPassword').value = acc.password || '';
+            document.getElementById('groupAccountNote').value = acc.note || '';
+            this.currentGroupAccountId = accountId;
+          }
+        }
+      });
+    }
+
+    this.groupAccountModal.open();
+  }
+
+  resetGroupAccountForm() {
+    document.getElementById('groupAccountForm')?.reset();
+    hideError('groupAccountUsernameError');
+    hideError('groupAccountAccountError');
+    hideError('groupAccountPasswordError');
+    hideError('groupAccountNoteError');
+    this.currentGroupAccountId = null;
+
+    const pwInput = document.getElementById('groupAccountPassword');
+    const pwToggle = document.getElementById('groupAccountPasswordToggle');
+    if (pwInput && pwToggle) {
+      pwInput.type = 'password';
+      pwToggle.classList.remove('show-password');
+    }
+  }
+
+  async handleGroupAccountSubmit() {
+    const username = document.getElementById('groupAccountUsername').value.trim();
+    const account = document.getElementById('groupAccountAccount').value.trim();
+    const password = document.getElementById('groupAccountPassword').value;
+    const note = document.getElementById('groupAccountNote').value.trim();
+
+    hideError('groupAccountUsernameError');
+    hideError('groupAccountAccountError');
+    hideError('groupAccountPasswordError');
+
+    let isValid = true;
+    if (!username) { showError('groupAccountUsernameError', '用户名不能为空'); isValid = false; }
+    if (!account) { showError('groupAccountAccountError', '账号不能为空'); isValid = false; }
+    if (!password) { showError('groupAccountPasswordError', '密码不能为空'); isValid = false; }
+    if (!isValid) return;
+
+    try {
+      const result = await chrome.storage.local.get('accountGroups');
+      const groups = result.accountGroups || [];
+      const groupIndex = groups.findIndex(g => g.id === this.currentGroupId);
+      if (groupIndex === -1) {
+        showErrorMessage('模板不存在');
+        return;
+      }
+
+      const group = groups[groupIndex];
+      if (!group.accounts) group.accounts = [];
+
+      if (this.currentGroupAccountId) {
+        // 编辑
+        const accIndex = group.accounts.findIndex(a => a.id === this.currentGroupAccountId);
+        if (accIndex !== -1) {
+          group.accounts[accIndex] = {
+            ...group.accounts[accIndex],
+            username, account, password, note: note || '',
+            updatedAt: Date.now()
+          };
+        }
+      } else {
+        // 新增
+        group.accounts.push({
+          id: Date.now().toString(),
+          username, account, password, note: note || '',
+          createdAt: Date.now()
+        });
+      }
+
+      group.updatedAt = Date.now();
+      await chrome.storage.local.set({ accountGroups: groups });
+      this.groupAccountModal.close();
+      this.resetGroupAccountForm();
+      this.renderGroupList();
+      showSuccessMessage(this.currentGroupAccountId ? '账号更新成功' : '账号添加成功');
+    } catch (error) {
+      console.error('保存模板账号失败:', error);
+      showErrorMessage('保存失败: ' + error.message);
+    }
+  }
+
+  async handleDeleteGroupAccount(groupId, accountId) {
+    const confirmed = await showConfirm('删除账号', '确定要从模板中删除这个账号吗？', { confirmText: '删除', dangerous: true });
+    if (!confirmed) return;
+
+    try {
+      const result = await chrome.storage.local.get('accountGroups');
+      const groups = result.accountGroups || [];
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        group.accounts = (group.accounts || []).filter(a => a.id !== accountId);
+        group.updatedAt = Date.now();
+        await chrome.storage.local.set({ accountGroups: groups });
+        this.renderGroupList();
+        showSuccessMessage('账号已从模板删除');
+      }
+    } catch (error) {
+      console.error('删除模板账号失败:', error);
+      showErrorMessage('删除失败: ' + error.message);
+    }
+  }
+
   // 合并导入数据
   async mergeImportData(importData) {
     try {
       // 获取现有数据
-      const result = await chrome.storage.local.get(['environments', 'accounts']);
+      const result = await chrome.storage.local.get(['environments', 'accounts', 'accountGroups']);
       const existingEnvironments = result.environments || [];
       const existingAccounts = result.accounts || [];
+      const existingGroups = result.accountGroups || [];
       
       // 合并网站数据
       let mergedEnvironments = [...existingEnvironments];
@@ -1484,10 +1992,32 @@ class AccountManager {
         });
       }
       
+      // 合并账号模板
+      let mergedGroups = [...existingGroups];
+      if (importData.accountGroups && importData.accountGroups.length > 0) {
+        importData.accountGroups.forEach(importGroup => {
+          const existingIndex = mergedGroups.findIndex(g => g.id === importGroup.id);
+          if (existingIndex !== -1) {
+            mergedGroups[existingIndex] = {
+              ...importGroup,
+              updatedAt: Date.now()
+            };
+          } else {
+            mergedGroups.push({
+              ...importGroup,
+              id: importGroup.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+              createdAt: importGroup.createdAt || Date.now(),
+              updatedAt: Date.now()
+            });
+          }
+        });
+      }
+
       // 保存合并后的数据
       await chrome.storage.local.set({
         environments: mergedEnvironments,
-        accounts: mergedAccounts
+        accounts: mergedAccounts,
+        accountGroups: mergedGroups
       });
     } catch (error) {
       console.error('合并数据失败:', error);

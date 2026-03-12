@@ -1207,3 +1207,228 @@ body {
 }
 
 .setting-select:focus { outline: none; border-color: var(--primary-color); }
+
+/* ==================== 账号模板页面 ==================== */
+
+#tab-templates { background: var(--bg-base); }
+
+#tab-templates .group-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.group-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+}
+
+.group-card:hover {
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
+}
+
+.group-card-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.group-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(52, 168, 83, 0.08);
+    color: var(--success-color);
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.group-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.group-meta {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+}
+
+.group-badge {
+    font-size: 10px;
+    background: rgba(52, 168, 83, 0.08);
+    color: var(--success-color);
+    padding: 2px 7px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.group-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.group-card-header:hover .group-actions { opacity: 1; }
+
+.group-actions button {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    background: transparent;
+    color: var(--text-tertiary);
+}
+
+.group-actions button:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+}
+
+.group-accounts {
+    border-top: 1px solid var(--border-subtle);
+    padding: 8px 14px 10px;
+}
+
+.group-account-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: var(--radius-xs);
+    gap: 8px;
+    transition: background var(--transition-fast);
+}
+
+.group-account-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.group-account-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-account-info .username {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group-account-info .account-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group-account-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.group-account-item:hover .group-account-actions { opacity: 1; }
+
+.group-account-actions button {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    background: transparent;
+    color: var(--text-tertiary);
+}
+
+.group-account-actions button:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+}
+
+.group-add-account-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.group-add-account-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--primary-subtle);
+}
+
+/* 共享账号标记 */
+.shared-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--success-color);
+    background: rgba(52, 168, 83, 0.08);
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.shared-badge svg {
+    width: 10px;
+    height: 10px;
+}
+
+/* 网站模态框中的模板选择器 */
+#envLinkedGroup {
+    font-size: 13px;
+}

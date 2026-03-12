@@ -1015,15 +1015,33 @@ class FloatingPanel {
     }
     
     try {
-      const result = await chrome.storage.local.get('accounts');
+      const result = await chrome.storage.local.get(['accounts', 'environments', 'accountGroups']);
       const accounts = result.accounts || [];
-      const envAccounts = accounts.filter(account => account.envId === envId);
+      const environments = result.environments || [];
+      const groups = result.accountGroups || [];
+
+      let envAccounts = accounts.filter(account => account.envId === envId);
+
+      // 加载关联的账号模板
+      const currentEnv = environments.find(e => e.id === envId);
+      if (currentEnv?.linkedGroupId) {
+        const linkedGroup = groups.find(g => g.id === currentEnv.linkedGroupId);
+        if (linkedGroup?.accounts?.length > 0) {
+          const sharedAccounts = linkedGroup.accounts.map(acc => ({
+            ...acc,
+            _isShared: true,
+            _groupName: linkedGroup.name
+          }));
+          envAccounts = [...envAccounts, ...sharedAccounts];
+        }
+      }
+
       const accountList = this.panel.querySelector('#account-list');
-      
+
       if (!accountList) return;
-      
+
       accountList.innerHTML = '';
-      
+
       if (envAccounts.length === 0) {
         const emptyMsg = createElement('div', {
           style: {
@@ -1080,27 +1098,41 @@ class FloatingPanel {
     }, ['登录']);
     loginBtn.addEventListener('click', () => this.handleLogin(account.id));
 
-    const editBtn = createElement('button', {
-      class: 'edit-btn',
-      tabindex: '0',
-      'aria-label': '编辑账号'
-    }, ['编辑']);
-    editBtn.addEventListener('click', () => this.showEditAccountForm(account));
-
-    const deleteBtn = createElement('button', {
-      class: 'delete-btn',
-      tabindex: '0',
-      'aria-label': '删除账号'
-    }, ['删除']);
-    deleteBtn.addEventListener('click', async () => {
-      if (confirm('确定要删除此账号吗？')) {
-        await this.handleDeleteAccount(account.id);
-      }
-    });
-
     btnContainer.appendChild(loginBtn);
-    btnContainer.appendChild(editBtn);
-    btnContainer.appendChild(deleteBtn);
+
+    if (account._isShared) {
+      const hintBtn = createElement('button', {
+        class: 'edit-btn',
+        tabindex: '0',
+        'aria-label': '模板账号提示',
+        title: '请到「模板」页面编辑此账号'
+      }, ['模板']);
+      hintBtn.addEventListener('click', () => {
+        alert('请到「模板」页面编辑此账号');
+      });
+      btnContainer.appendChild(hintBtn);
+    } else {
+      const editBtn = createElement('button', {
+        class: 'edit-btn',
+        tabindex: '0',
+        'aria-label': '编辑账号'
+      }, ['编辑']);
+      editBtn.addEventListener('click', () => this.showEditAccountForm(account));
+
+      const deleteBtn = createElement('button', {
+        class: 'delete-btn',
+        tabindex: '0',
+        'aria-label': '删除账号'
+      }, ['删除']);
+      deleteBtn.addEventListener('click', async () => {
+        if (confirm('确定要删除此账号吗？')) {
+          await this.handleDeleteAccount(account.id);
+        }
+      });
+
+      btnContainer.appendChild(editBtn);
+      btnContainer.appendChild(deleteBtn);
+    }
 
     item.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -1117,10 +1149,22 @@ class FloatingPanel {
   
   async handleLogin(accountId) {
     try {
-      const result = await chrome.storage.local.get('accounts');
+      const result = await chrome.storage.local.get(['accounts', 'accountGroups']);
       const accounts = result.accounts || [];
-      const account = accounts.find(acc => acc.id === accountId);
-      
+      let account = accounts.find(acc => acc.id === accountId);
+
+      // 如果在普通账号中未找到，搜索账号模板
+      if (!account) {
+        const groups = result.accountGroups || [];
+        for (const group of groups) {
+          const found = group.accounts?.find(acc => acc.id === accountId);
+          if (found) {
+            account = found;
+            break;
+          }
+        }
+      }
+
       if (!account) {
         console.error('账号不存在');
         return;
