@@ -327,6 +327,11 @@ class AccountManager {
       this.downloadImportTemplate();
     });
 
+    // 下载AI提示词
+    document.getElementById('downloadAIPromptBtn')?.addEventListener('click', () => {
+      this.downloadAIPrompt();
+    });
+
     // ===== 账号模板相关 =====
     document.getElementById('addGroupBtn')?.addEventListener('click', () => {
       this.openGroupModal();
@@ -1539,6 +1544,66 @@ class AccountManager {
     const blob = new Blob([jsonString], { type: 'application/json' });
     this.downloadBlob(blob, 'account-manager-import-template.json');
     showSuccessMessage('导入模板已下载，请按模板格式填写后导入');
+  }
+
+  downloadAIPrompt() {
+    const prompt = `你是一个 JSON 数据生成助手。请根据我提供的网站和账号信息，生成符合「账号管理器」扩展导入格式的 JSON 文件。
+
+## 规则
+1. 严格按照下方 JSON 格式输出，不要添加任何多余解释
+2. \`environments[].id\` 使用时间戳作为 ID（如 \`1700000000000\`），按顺序递增
+3. \`accounts[].id\` 使用时间戳作为 ID（如 \`1700000000001\`），按顺序递增
+4. \`accounts[].envId\` 必须与对应网站的 \`environments[].id\` 匹配
+5. \`password\` 字段填写明文密码（导入后扩展会自动加密）
+6. \`loginButtonId\` 和 \`loginButtonClass\` 如果不知道可以留空字符串 ""
+7. \`note\` 和 \`favorite\` 为可选字段，没有备注时 \`note\` 填空字符串，\`favorite\` 默认为 \`false\`
+8. \`version\` 固定为 "2.0"
+
+## JSON 格式模板
+
+\`\`\`json
+{
+  "version": "2.0",
+  "exportTime": "当前时间ISO格式",
+  "environments": [
+    {
+      "id": "1700000000000",
+      "name": "网站名称",
+      "loginUrl": "登录页面地址",
+      "loginButtonId": "",
+      "loginButtonClass": ""
+    }
+  ],
+  "accounts": [
+    {
+      "id": "1700000000001",
+      "envId": "1700000000000",
+      "username": "显示名称/用户名",
+      "account": "登录账号（邮箱/手机号等）",
+      "password": "明文密码",
+      "note": "备注信息",
+      "favorite": false
+    }
+  ],
+  "accountGroups": []
+}
+\`\`\`
+
+## 以下是我的网站和账号信息，请生成 JSON：
+
+网站列表：
+1、网站名称
+登录地址：https://example.com/login
+
+账号列表：
+
+【网站名称】
+用户名  登录账号  密码  备注
+`;
+
+    const blob = new Blob([prompt], { type: 'text/plain' });
+    this.downloadBlob(blob, 'account-manager-AI提示词.txt');
+    showSuccessMessage('AI提示词已下载，复制内容到AI对话中使用');
   }
 
   downloadBlob(blob, filename) {
