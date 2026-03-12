@@ -322,6 +322,11 @@ class AccountManager {
       }
     });
 
+    // 下载导入模板
+    document.getElementById('downloadTemplateBtn')?.addEventListener('click', () => {
+      this.downloadImportTemplate();
+    });
+
     // ===== 账号模板相关 =====
     document.getElementById('addGroupBtn')?.addEventListener('click', () => {
       this.openGroupModal();
@@ -1486,6 +1491,54 @@ class AccountManager {
       console.error('导出失败:', error);
       showErrorMessage('导出失败: ' + error.message);
     }
+  }
+
+  // 下载导入模板
+  downloadImportTemplate() {
+    const template = {
+      version: '2.0',
+      exportTime: new Date().toISOString(),
+      environments: [
+        {
+          id: '示例：用时间戳作为ID，如 1700000000000',
+          name: '示例网站',
+          loginUrl: 'https://example.com/login',
+          loginButtonId: '登录按钮的ID（可选）',
+          loginButtonClass: '登录按钮的class（可选）'
+        }
+      ],
+      accounts: [
+        {
+          id: '示例：用时间戳作为ID，如 1700000000001',
+          envId: '对应网站的ID，如 1700000000000',
+          username: '张三',
+          account: 'zhangsan',
+          password: '123456',
+          note: '备注信息（可选）',
+          favorite: false
+        }
+      ],
+      accountGroups: [
+        {
+          id: '示例：用时间戳作为ID，如 1700000000002',
+          name: '示例模板',
+          accounts: [
+            {
+              id: '模板账号ID',
+              username: '模板用户',
+              account: 'template_user',
+              password: '123456',
+              note: '模板备注（可选）'
+            }
+          ]
+        }
+      ]
+    };
+
+    const jsonString = JSON.stringify(template, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    this.downloadBlob(blob, 'account-manager-import-template.json');
+    showSuccessMessage('导入模板已下载，请按模板格式填写后导入');
   }
 
   downloadBlob(blob, filename) {
