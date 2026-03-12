@@ -160,6 +160,7 @@ class FloatingPanel {
     
     this.createPanel();
     this.setupEventListeners();
+    this.setupKeyboardShortcut();
     this.loadEnvironments();
     
     // 监听来自background的消息
@@ -332,8 +333,26 @@ class FloatingPanel {
 
     // 初始化拖拽
     this.dragger = new PanelDragger(this.panel, header);
+
+    // 智能定位：避免遮挡登录表单
+    this.smartPosition();
   }
   
+  // Alt+A 快捷键切换面板展开/折叠
+  setupKeyboardShortcut() {
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && (e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        if (!this.host || this.host.style.display === 'none') return;
+        if (this.isCollapsed) {
+          this.expandFromCircle();
+        } else {
+          this.collapseToCircle();
+        }
+      }
+    });
+  }
+
   setupEventListeners() {
     const envSelect = this.panel.querySelector('#env-select');
     const addBtn = this.panel.querySelector('#add-account-btn');
@@ -1041,11 +1060,14 @@ class FloatingPanel {
     const accountText = account.account || '';
     const displayText = accountText ? `${username}（${accountText}）` : username;
     safeSetTextContent(accountInfo, displayText);
+    accountInfo.title = displayText;
     accountInfoContainer.appendChild(accountInfo);
 
     if (account.note && account.note.trim()) {
       const accountNote = createElement('div', { class: 'account-note-text' });
-      safeSetTextContent(accountNote, account.note.trim());
+      const noteText = account.note.trim();
+      safeSetTextContent(accountNote, noteText);
+      accountNote.title = noteText;
       accountInfoContainer.appendChild(accountNote);
     }
 
@@ -1137,19 +1159,30 @@ class FloatingPanel {
       'form[action*="login"]',
       'form[action*="signin"]',
       'form[action*="auth"]',
+      'form[action*="session"]',
       'form'
     ];
-    
+
     for (const selector of selectors) {
-      const form = document.querySelector(selector);
-      if (form) {
+      const forms = document.querySelectorAll(selector);
+      for (const form of forms) {
         const hasPassword = form.querySelector('input[type="password"]');
         if (hasPassword) {
           return form;
         }
       }
     }
-    
+
+    // SPA 兜底：无 <form> 但页面上有密码框，构造虚拟表单容器
+    const passwordInput = document.querySelector('input[type="password"]');
+    if (passwordInput) {
+      // 向上查找最近的容器
+      const container = passwordInput.closest('[class*="login"], [class*="signin"], [class*="auth"], [id*="login"], [id*="signin"], [id*="auth"], [role="form"], div, section');
+      if (container) {
+        return container;
+      }
+    }
+
     return null;
   }
   
@@ -1157,13 +1190,26 @@ class FloatingPanel {
     // 查找用户名/账号输入框（包括 email 类型，因为很多网站使用 email 作为登录字段）
     const usernameSelectors = [
       'input[name="username"]',
-      'input[name="email"]', // 很多网站使用 email 作为登录字段
+      'input[name="email"]',
       'input[name="user"]',
-      'input[type="email"]', // 很多网站使用 email 类型
+      'input[name="account"]',
+      'input[name="loginName"]',
+      'input[name="mobile"]',
+      'input[name="phone"]',
+      'input[type="email"]',
+      'input[type="tel"]',
       'input[type="text"]',
       'input[id*="user"]',
-      'input[id*="email"]', // 很多网站使用 email 作为 id
-      'input[id*="login"]'
+      'input[id*="email"]',
+      'input[id*="login"]',
+      'input[id*="account"]',
+      'input[id*="mobile"]',
+      'input[placeholder*="用户"]',
+      'input[placeholder*="账号"]',
+      'input[placeholder*="邮箱"]',
+      'input[placeholder*="手机"]',
+      'input[placeholder*="email"]',
+      'input[placeholder*="username"]'
     ];
     
     const passwordSelectors = [
@@ -1176,25 +1222,39 @@ class FloatingPanel {
     
     let filled = false;
     
+    // 模拟真实输入（兼容 React/Vue 等框架）
+    const setNativeValue = (input, value) => {
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype, 'value'
+      )?.set;
+      if (nativeInputValueSetter) {
+        nativeInputValueSetter.call(input, value);
+      } else {
+        input.value = value;
+      }
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+    };
+
     // 填充用户名
     for (const selector of usernameSelectors) {
       const input = form.querySelector(selector);
       if (input && !input.disabled && !input.readOnly) {
-        input.value = account.account || account.username || '';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.focus();
+        setNativeValue(input, account.account || account.username || '');
         filled = true;
         break;
       }
     }
-    
+
     // 填充密码
     for (const selector of passwordSelectors) {
       const input = form.querySelector(selector);
       if (input && !input.disabled && !input.readOnly) {
-        input.value = account.password || '';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.focus();
+        setNativeValue(input, account.password || '');
         filled = true;
         break;
       }
@@ -1248,6 +1308,46 @@ class FloatingPanel {
     }
   }
   
+  // 智能定位：检测登录表单位置，将面板放在不遮挡的一侧
+  smartPosition() {
+    // 如果用户已保存过位置，跳过智能定位
+    try {
+      const saved = localStorage.getItem('account-manager-panel-position');
+      if (saved) return;
+    } catch (e) { /* ignore */ }
+
+    requestAnimationFrame(() => {
+      const form = document.querySelector('form');
+      if (!form || !form.querySelector('input[type="password"]')) return;
+
+      const formRect = form.getBoundingClientRect();
+      const panelRect = this.panel.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      let x, y;
+      // 表单在左半边 → 面板放右侧，反之放左侧
+      const formCenterX = formRect.left + formRect.width / 2;
+      if (formCenterX < vw / 2) {
+        // 表单偏左，面板放右侧
+        x = Math.min(vw - panelRect.width - 20, formRect.right + 30);
+      } else {
+        // 表单偏右，面板放左侧
+        x = Math.max(20, formRect.left - panelRect.width - 30);
+      }
+
+      // 垂直居中对齐表单
+      y = Math.max(20, Math.min(
+        formRect.top + formRect.height / 2 - panelRect.height / 2,
+        vh - panelRect.height - 20
+      ));
+
+      this.dragger.currentX = x;
+      this.dragger.currentY = y;
+      this.dragger.applyPosition(x, y);
+    });
+  }
+
   collapseToCircle() {
     if (!this.panel) return;
     this.isCollapsed = true;

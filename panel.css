@@ -229,9 +229,9 @@
     min-height: 0;
 }
 
-#account-manager-panel #account-list::-webkit-scrollbar { width: 3px; }
+#account-manager-panel #account-list::-webkit-scrollbar { width: 6px; }
 #account-manager-panel #account-list::-webkit-scrollbar-track { background: transparent; }
-#account-manager-panel #account-list::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 2px; }
+#account-manager-panel #account-list::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
 #account-manager-panel #account-list::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
 
 /* ==================== 账号卡片 ==================== */
@@ -288,6 +288,31 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 500;
+    position: relative;
+}
+
+/* Tooltip for truncated text */
+#account-manager-panel .account-display-text[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 4px);
+    background: var(--text-primary);
+    color: var(--bg-primary);
+    padding: 4px 8px;
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-weight: 400;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: var(--shadow-md);
+    animation: tooltipFadeIn 150ms ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 #account-manager-panel .account-note-text {

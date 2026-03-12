@@ -267,9 +267,9 @@ body {
     min-height: 0;
 }
 
-.account-list::-webkit-scrollbar { width: 4px; }
+.account-list::-webkit-scrollbar { width: 6px; }
 .account-list::-webkit-scrollbar-track { background: transparent; }
-.account-list::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 2px; }
+.account-list::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
 .account-list::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
 
 /* 账号卡片 - 两层布局 */
@@ -481,6 +481,43 @@ body {
 .empty-state-hint {
     font-size: 12px;
     color: var(--text-tertiary);
+}
+
+.empty-state-cta {
+    margin-top: 16px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFFFFF;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.empty-state-cta:hover {
+    box-shadow: 0 4px 16px rgba(59, 125, 216, 0.2);
+    transform: translateY(-1px);
+}
+
+.empty-state-cta:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* 导出按钮组 */
+.export-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-sep {
+    color: var(--border-color);
+    font-size: 12px;
 }
 
 /* ==================== 网站页面 ==================== */
@@ -696,6 +733,10 @@ body {
     background-color: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    /* backdrop-filter 降级：不支持时使用更深的半透明背景 */
+    @supports not (backdrop-filter: blur(6px)) {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
     z-index: 1000;
     align-items: center;
     justify-content: center;

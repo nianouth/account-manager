@@ -91,6 +91,7 @@ class AccountManager {
     this.currentAccountId = null;
     this.currentEnvIdForEdit = null;
     this.searchTerm = '';
+    this.searchDebounceTimer = null;
     this.envModal = new ModalManager('envModal');
     this.accountModal = new ModalManager('accountModal');
     this.currentTab = 'accounts';
@@ -192,11 +193,15 @@ class AccountManager {
     const searchInput = document.getElementById('searchInput');
     const searchClear = document.getElementById('searchClear');
     searchInput?.addEventListener('input', (e) => {
-      this.searchTerm = e.target.value.toLowerCase();
-      this.loadAccounts(this.currentEnvId);
       if (searchClear) {
         searchClear.classList.toggle('visible', e.target.value.length > 0);
       }
+      // 搜索防抖：300ms
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = setTimeout(() => {
+        this.searchTerm = e.target.value.toLowerCase();
+        this.loadAccounts(this.currentEnvId);
+      }, 300);
     });
     searchClear?.addEventListener('click', () => {
       if (searchInput) {
@@ -280,7 +285,11 @@ class AccountManager {
     // 导出按钮
     const exportBtn = document.getElementById('exportBtn');
     exportBtn?.addEventListener('click', () => {
-      this.exportData();
+      this.exportData('json');
+    });
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    exportCsvBtn?.addEventListener('click', () => {
+      this.exportData('csv');
     });
     
     // 导入按钮
@@ -390,7 +399,13 @@ class AccountManager {
             <div class="empty-state-icon">${SVG_ICONS.globe}</div>
             <div class="empty-state-text">还没有添加网站</div>
             <div class="empty-state-hint">点击下方按钮添加第一个网站</div>
+            <button class="empty-state-cta" id="emptyAddEnvBtn">
+              ${SVG_ICONS.plus} 添加网站
+            </button>
           </div>`;
+        document.getElementById('emptyAddEnvBtn')?.addEventListener('click', () => {
+          this.openEnvModal();
+        });
         return;
       }
 
@@ -529,8 +544,14 @@ class AccountManager {
               <div class="empty-state-icon">${SVG_ICONS.notepad}</div>
               <div class="empty-state-text">还没有账号</div>
               <div class="empty-state-hint">点击下方按钮添加第一个账号</div>
+              <button class="empty-state-cta" id="emptyAddAccountBtn">
+                ${SVG_ICONS.plus} 添加账号
+              </button>
             </div>
           `;
+          document.getElementById('emptyAddAccountBtn')?.addEventListener('click', () => {
+            this.openAccountModal();
+          });
         }
         return;
       }
@@ -574,12 +595,16 @@ class AccountManager {
 
     const username = document.createElement('div');
     username.className = 'username';
-    safeSetTextContent(username, account.username || '未命名');
+    const usernameText = account.username || '未命名';
+    safeSetTextContent(username, usernameText);
+    username.title = usernameText;
     accountInfo.appendChild(username);
 
     const accountText = document.createElement('div');
     accountText.className = 'account-text';
-    safeSetTextContent(accountText, account.account || '');
+    const accountTextValue = account.account || '';
+    safeSetTextContent(accountText, accountTextValue);
+    accountText.title = accountTextValue;
     accountInfo.appendChild(accountText);
 
     top.appendChild(favoriteBtn);
@@ -597,7 +622,9 @@ class AccountManager {
     if (account.note && account.note.trim()) {
       const accountNote = document.createElement('div');
       accountNote.className = 'account-note';
-      safeSetTextContent(accountNote, account.note.trim());
+      const noteText = account.note.trim();
+      safeSetTextContent(accountNote, noteText);
+      accountNote.title = noteText;
       bottomLeft.appendChild(accountNote);
     } else {
       // 复制按钮组
@@ -1135,6 +1162,17 @@ class AccountManager {
       const result = await chrome.storage.local.get('accounts');
       const accounts = result.accounts || [];
 
+      // 重复账号检测
+      const duplicate = accounts.find(a =>
+        a.envId === this.currentEnvId &&
+        a.account === account &&
+        a.id !== (this.currentAccountId || '')
+      );
+      if (duplicate) {
+        showError('accountAccountError', `账号"${account}"已存在（用户名：${duplicate.username || '未命名'}）`);
+        return;
+      }
+
       if (this.currentAccountId) {
         // 编辑模式
         const index = accounts.findIndex(a => a.id === this.currentAccountId);
@@ -1218,8 +1256,8 @@ class AccountManager {
     }
   }
   
-  // 导出数据为JSON文件
-  async exportData() {
+  // 导出数据
+  async exportData(format = 'json') {
     try {
       // 显示安全警告
       const confirmed = await showConfirm('导出数据', '导出的文件包含账号密码数据。请注意：\n\n1. 请妥善保管此文件，不要分享给他人\n2. 不要通过不安全的渠道传输\n3. 使用后请及时删除', { confirmText: '导出' });
@@ -1229,33 +1267,62 @@ class AccountManager {
       const environments = result.environments || [];
       const accounts = result.accounts || [];
 
-      // 构建导出数据
-      const exportData = {
-        version: '2.0',
-        exportTime: new Date().toISOString(),
-        environments: environments,
-        accounts: accounts
-      };
+      const dateStr = new Date().toISOString().split('T')[0];
 
-      // 转换为JSON字符串（格式化）
-      const jsonString = JSON.stringify(exportData, null, 2);
+      if (format === 'csv') {
+        // CSV 导出
+        const envMap = {};
+        environments.forEach(e => { envMap[e.id] = e.name || '未命名'; });
 
-      // 创建Blob并下载
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `account-manager-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+        const csvRows = [
+          ['网站', '用户名', '账号', '密码', '备注', '收藏'].join(',')
+        ];
+        accounts.forEach(acc => {
+          const row = [
+            envMap[acc.envId] || '',
+            acc.username || '',
+            acc.account || '',
+            acc.password || '',
+            acc.note || '',
+            acc.favorite ? '是' : '否'
+          ].map(v => `"${String(v).replace(/"/g, '""')}"`);
+          csvRows.push(row.join(','));
+        });
+
+        // 添加 BOM 以确保 Excel 正确识别 UTF-8
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8' });
+        this.downloadBlob(blob, `account-manager-export-${dateStr}.csv`);
+      } else {
+        // JSON 导出
+        const exportData = {
+          version: '2.0',
+          exportTime: new Date().toISOString(),
+          environments: environments,
+          accounts: accounts
+        };
+
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        this.downloadBlob(blob, `account-manager-export-${dateStr}.json`);
+      }
 
       showSuccessMessage('配置导出成功');
     } catch (error) {
       console.error('导出失败:', error);
       showErrorMessage('导出失败: ' + error.message);
     }
+  }
+
+  downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
   
   // 导入数据
