@@ -7,6 +7,22 @@
 
 ---
 
+## [2.1.9] - 2026-07-04
+
+### 🔒 安全加固
+- **移除危险的"盲点任意按钮"兜底**：`content.js` 与 `popup.js` 提交登录表单时，找不到明确的提交按钮不再点击 `button:not([type])` 等任意按钮，改为仅在真正的 `<form>` 上调用原生提交，避免误触发页面其他操作
+- **移除硬编码登录按钮默认值**：删除 `popup.js` 中残留的 `ch_login_btn` / `formBtn` 默认选择器，未配置时不再在无关网站上误点按钮
+- **修复搜索结果空状态的 XSS 隐患**：搜索关键词不再拼接进 `innerHTML`，改用 `safeSetTextContent` 安全渲染
+- **降低扩展指纹暴露**：`panel.css` 的 `web_accessible_resources` 启用 `use_dynamic_url`，页面无法通过固定资源 URL 探测扩展是否安装
+
+### 🧹 代码清理
+- 删除空壳的 `initializeDefaultData`（两个分支仅打印日志，无实际逻辑）
+- 修正误导性命名 `decryptedPassword` / `accountWithDecryptedPassword`（项目当前并无加解密逻辑）
+- 为 `url-matcher.js` 与 `content-utils.js` 中两份等价的 URL 匹配实现补充同步提醒注释（MV3 内容脚本无法 import 模块导致的必要重复）
+- 对齐 README 版本徽章、`popup.html` 设置页与 `manifest.json` 的版本号
+
+---
+
 ## [2.1.8] - 2026-03-12
 
 ### 🔧 优化改进

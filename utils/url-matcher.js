@@ -1,6 +1,9 @@
 /**
- * URL 匹配工具
- * 统一的 URL 匹配逻辑，避免在多个文件中重复
+ * URL 匹配工具（ES Module 版本，供 background.js / popup.js 使用）
+ *
+ * ⚠️ 同步提醒：Manifest V3 的内容脚本无法直接 import ES Module，
+ * 因此 content-utils.js 中存在一份功能等价的经典脚本实现
+ * （normalizeUrl / matchEnvByUrl）。修改匹配规则时请同步两处，保持行为一致。
  */
 
 /**

@@ -645,13 +645,17 @@ class AccountManager {
 
       if (envAccounts.length === 0) {
         if (this.searchTerm) {
-          accountList.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-state-icon">${SVG_ICONS.search}</div>
-              <div class="empty-state-text">未找到账号</div>
-              <div class="empty-state-hint">没有匹配"${this.searchTerm}"的结果</div>
-            </div>
-          `;
+          accountList.innerHTML = '';
+          const emptyState = createElement('div', { className: 'empty-state' });
+          const icon = createElement('div', { className: 'empty-state-icon' });
+          icon.innerHTML = SVG_ICONS.search;
+          const text = createElement('div', { className: 'empty-state-text' }, ['未找到账号']);
+          const hint = createElement('div', { className: 'empty-state-hint' });
+          safeSetTextContent(hint, `没有匹配"${this.searchTerm}"的结果`);
+          emptyState.appendChild(icon);
+          emptyState.appendChild(text);
+          emptyState.appendChild(hint);
+          accountList.appendChild(emptyState);
         } else {
           accountList.innerHTML = `
             <div class="empty-state">
@@ -880,15 +884,12 @@ class AccountManager {
         return;
       }
       
-      // 创建账号副本
-      const accountWithDecryptedPassword = { ...account };
-      
-      // 获取当前网站的登录按钮配置
+      // 获取当前网站的登录按钮配置（不使用硬编码默认值，避免在无关网站误点按钮）
       const envResult = await chrome.storage.local.get('environments');
       const environments = envResult.environments || [];
       const currentEnv = environments.find(e => e.id === account.envId);
-      const loginButtonId = currentEnv?.loginButtonId || 'ch_login_btn';
-      const loginButtonClass = currentEnv?.loginButtonClass || 'formBtn';
+      const loginButtonId = currentEnv?.loginButtonId || '';
+      const loginButtonClass = currentEnv?.loginButtonClass || '';
       
       // 获取当前活动标签页
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -901,7 +902,7 @@ class AccountManager {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: this.fillLoginForm,
-        args: [accountWithDecryptedPassword, loginButtonId, loginButtonClass]
+        args: [{ ...account }, loginButtonId, loginButtonClass]
       });
       
       // 关闭popup
@@ -963,40 +964,31 @@ class AccountManager {
       passwordInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
     
-    // 使用配置的按钮选择器提交登录表单
-    const defaultId = loginButtonId || 'ch_login_btn';
-    const defaultClass = loginButtonClass || 'formBtn';
-    
-    // 优先使用配置的选择器
+    // 使用用户配置的按钮选择器提交登录表单（不使用硬编码默认，避免误点无关按钮）
     let submitButton = null;
     
-    // 1. 优先使用ID（在整个文档中查找）
-    if (defaultId) {
-      submitButton = document.getElementById(defaultId);
+    // 1. 优先使用用户配置的ID（在整个文档中查找）
+    if (loginButtonId) {
+      submitButton = document.getElementById(loginButtonId);
     }
     
-    // 2. 如果ID没找到，使用Class（在整个文档中查找）
-    if (!submitButton && defaultClass) {
-      // 处理多个类名（用空格分隔）
-      const classes = defaultClass.split(/\s+/).filter(c => c).map(c => `.${c}`).join('');
-      submitButton = document.querySelector(classes || `.${defaultClass}`);
+    // 2. 如果ID没找到，使用用户配置的Class（在整个文档中查找）
+    if (!submitButton && loginButtonClass) {
+      const classes = loginButtonClass.split(/\s+/).filter(c => c).map(c => `.${c}`).join('');
+      if (classes) submitButton = document.querySelector(classes);
     }
     
-    // 3. 如果都没找到，在表单内查找提交按钮
+    // 3. 如果都没找到，在表单内查找明确的提交按钮
     if (!submitButton) {
       submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
     }
     
-    // 4. 如果还是没找到，尝试查找其他可能的提交按钮
-    if (!submitButton) {
-      submitButton = form.querySelector('button:not([type]), button[type="button"]');
-    }
-    
-    // 5. 如果找到按钮，点击它
+    // 4. 找到明确的提交按钮就点击；否则尝试原生表单提交，绝不盲点任意按钮
     if (submitButton) {
       submitButton.click();
-    } else {
-      // 6. 如果还是没找到，尝试提交表单
+    } else if (typeof form.requestSubmit === 'function') {
+      form.requestSubmit();
+    } else if (form.tagName === 'FORM') {
       form.submit();
     }
   }

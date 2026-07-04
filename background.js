@@ -6,26 +6,6 @@
 
 import { matchEnvironment as matchEnvByUrl } from './utils/url-matcher.js';
 
-// 初始化默认数据
-const initializeDefaultData = async () => {
-  try {
-    const result = await chrome.storage.local.get(['environments', 'accounts']);
-    
-    if (!result.environments || result.environments.length === 0) {
-      // 不初始化默认网站，让用户自己添加并设置登录页面URL
-      console.log('网站列表为空，等待用户添加');
-    }
-    
-    if (!result.accounts || result.accounts.length === 0) {
-      // 不初始化默认账号，让用户自己添加
-      // 这样可以避免存储不安全的默认密码
-      console.log('账号列表为空，等待用户添加');
-    }
-  } catch (error) {
-    console.error('初始化默认数据失败:', error);
-  }
-};
-
 // 匹配网站（根据登录页面URL，使用 utils/url-matcher.js 统一逻辑）
 const matchEnvironment = async (urlString) => {
   if (!urlString) return null;
@@ -44,7 +24,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('账号管理器扩展已安装/更新:', details.reason);
 
   if (details.reason === 'install') {
-    await initializeDefaultData();
     console.log('欢迎使用账号管理器！');
   } else if (details.reason === 'update') {
     const version = chrome.runtime.getManifest().version;

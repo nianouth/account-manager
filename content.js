@@ -1170,8 +1170,6 @@ class FloatingPanel {
         return;
       }
       
-      const decryptedPassword = account.password;
-
       // 智能查找登录表单
       const loginForm = this.findLoginForm();
       if (!loginForm) {
@@ -1179,8 +1177,8 @@ class FloatingPanel {
         return;
       }
 
-      // 使用解密后的密码填充表单
-      this.fillLoginForm(loginForm, { ...account, password: decryptedPassword });
+      // 填充表单
+      this.fillLoginForm(loginForm, account);
       
       // 获取当前网站的登录按钮配置
       const envResult = await chrome.storage.local.get('environments');
@@ -1331,26 +1329,28 @@ class FloatingPanel {
       submitButton = document.querySelector(classes || `.${defaultClass}`);
     }
     
-    // 3. 如果都没找到，在表单内查找提交按钮
+    // 3. 如果都没找到，在表单内查找明确的提交按钮
     if (!submitButton) {
       submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
     }
     
-    // 4. 如果还是没找到，尝试查找其他可能的提交按钮
-    if (!submitButton) {
-      submitButton = form.querySelector('button:not([type]), button[type="button"]');
-    }
-    
-    // 5. 如果找到按钮，点击它
+    // 4. 找到明确的提交按钮就点击（绝不盲点 button:not([type]) 等任意按钮，避免误触发页面其他操作）
     if (submitButton) {
       submitButton.click();
       return true;
     }
     
-    // 6. 如果还是没找到，尝试提交表单
+    // 5. 没有明确按钮时，仅在真正的 <form> 上尝试原生提交
     try {
-      form.submit();
-      return true;
+      if (typeof form.requestSubmit === 'function' && form.tagName === 'FORM') {
+        form.requestSubmit();
+        return true;
+      }
+      if (form.tagName === 'FORM') {
+        form.submit();
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('提交表单失败:', error);
       return false;

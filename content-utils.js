@@ -68,6 +68,8 @@ function createElement(tag, attributes, children) {
 }
 
 // URL 规范化（移除查询参数和锚点）
+// ⚠️ 同步提醒：此实现与 utils/url-matcher.js 中的 ES Module 版本功能等价，
+// 因 MV3 内容脚本无法 import 模块而重复。修改匹配规则时请同步两处。
 function normalizeUrl(urlString) {
   try {
     var url = new URL(urlString);
