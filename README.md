@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![版本](https://img.shields.io/badge/版本-2.1.9-blue.svg)
+![版本](https://img.shields.io/badge/版本-3.0.0-blue.svg)
 ![Chrome](https://img.shields.io/badge/Chrome-88%2B-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-orange.svg)
 
